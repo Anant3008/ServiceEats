@@ -2,9 +2,8 @@ const mongose = require('mongoose');
 
 const deliverySchema = new mongose.Schema({
     orderId: {
-        type: mongose.Schema.Types.ObjectId,
+        type: String,
         required: true,
-        ref: 'Order'
     },
     driverName: {
         type: String,
