@@ -18,6 +18,23 @@ async function getWeather(city) {
   return res.json();
 }
 
+async function getTrendingMessageFromAI(city: string, temperature: number, condition: string) {
+  try {
+    const res = await fetch('http://localhost:3000/api/trending-message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ city, temperature, condition }),
+      cache: 'no-store'
+    });
+    const data = await res.json();
+    return data.message;
+  } catch (error) {
+    console.error("Failed to get AI message:", error);
+    // Fallback to static function
+    return getTrendingMessage(condition, temperature);
+  }
+}
+
 export default async function HomePage() {
   // Step 1: Detect location from user IP
   let city = "Pune"; // Default to Pune for local development
@@ -46,9 +63,9 @@ export default async function HomePage() {
   const temp = weather?.main?.temp || 25;
   const condition = weather?.weather?.[0]?.main || "Clear";
 
-  // Step 3: Generate trending message
-  const message = getTrendingMessage(condition, temp);
-  console.log("Message:", message, "Temp:", temp, "Condition:", condition); // Debug log
+  // Step 3: Generate trending message with AI
+  const message = await getTrendingMessageFromAI(city, temp, condition);
+  console.log("AI Message:", message, "Temp:", temp, "Condition:", condition); // Debug log
 
   return (
     <main className="p-8 max-w-4xl mx-auto">
