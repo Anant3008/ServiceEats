@@ -14,8 +14,8 @@ const startServer = async () => {
   try {
     await connectDB();
     
-    app.listen(process.env.PORT || 5006, () => {
-      console.log(`Notification Service running on port ${process.env.PORT || 5006}`);
+    app.listen(process.env.PORT || 4006, () => {
+      console.log(`Notification Service running on port ${process.env.PORT || 4006}`);
     });
 
     startConsumer();

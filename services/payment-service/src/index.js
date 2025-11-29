@@ -13,8 +13,8 @@ const startServer = async () => {
   try {
     await connectDB();
     
-    app.listen(process.env.PORT || 5004, () => {
-      console.log(`Payment Service running on port ${process.env.PORT || 5004}`);
+    app.listen(process.env.PORT || 4004, () => {
+      console.log(`Payment Service running on port ${process.env.PORT || 4004}`);
     });
 
     startConsumer();

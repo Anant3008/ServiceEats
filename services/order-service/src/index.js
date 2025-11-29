@@ -13,8 +13,8 @@ const startServer = async () => {
   try {
     await connectDB();
     
-    app.listen(process.env.PORT || 5003, () => {
-      console.log(`Order Service running on port ${process.env.PORT || 5003}`);
+    app.listen(process.env.PORT || 4003, () => {
+      console.log(`Order Service running on port ${process.env.PORT || 4003}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

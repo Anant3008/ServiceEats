@@ -1,15 +1,20 @@
-version: '3'
+version: '3.9'
+
 services:
+  # ------------------- ZOOKEEPER -------------------
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2181:2181"
 
+  # ------------------- KAFKA -------------------
   kafka:
-    image: confluentinc/cp-kafka:latest
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
     depends_on:
       - zookeeper
     ports:
@@ -17,15 +22,120 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "kafka-topics --bootstrap-server localhost:9092 --list >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
 
-  mongo:
-    image: mongo
+
+  # ------------------- GATEWAY SERVICE -------------------
+  gateway-service:
+    build: ./services/gateway
+    container_name: gateway-service
+    restart: always
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      KAFKA_BROKER: kafka:9092
     ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
+      - "3000:3000"
 
-volumes:
-  mongo-data:
+  # ------------------- USER SERVICE -------------------
+  user-service:
+    build: ./services/user-service
+    container_name: user-service
+    restart: always
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      PORT: 4001
+      MONGO_URI: ${MONGO_URI_USERS}
+      KAFKA_BROKER: kafka:9092
+    ports:
+      - "4001:4001"
+
+  # ------------------- RESTAURANT SERVICE -------------------
+  restaurant-service:
+    build: ./services/restaurant-service
+    container_name: restaurant-service
+    restart: always
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      PORT: 4002
+      MONGO_URI: ${MONGO_URI_RESTAURANTS}
+      KAFKA_BROKER: kafka:9092
+    ports:
+      - "4002:4002"
+
+  # ------------------- ORDER SERVICE -------------------
+  order-service:
+    build: ./services/order-service
+    container_name: order-service
+    restart: always
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      PORT: 4003
+      MONGO_URI: ${MONGO_URI_ORDERS}
+      KAFKA_BROKER: kafka:9092
+    ports:
+      - "4003:4003"
+
+  # ------------------- DELIVERY SERVICE -------------------
+  delivery-service:
+    build: ./services/delivery-service
+    container_name: delivery-service
+    restart: always
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      PORT: 4004
+      MONGO_URI: ${MONGO_URI_DELIVERY}
+      KAFKA_BROKER: kafka:9092
+    ports:
+      - "4004:4004"
+
+  # ------------------- PAYMENT SERVICE -------------------
+  payment-service:
+    build: ./services/payment-service
+    container_name: payment-service
+    restart: always
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      PORT: 4005
+      MONGO_URI: ${MONGO_URI_PAYMENT}
+      KAFKA_BROKER: kafka:9092
+    ports:
+      - "4005:4005"
+
+  # ------------------- NOTIFICATION SERVICE -------------------
+  notification-service:
+    build: ./services/notification-service
+    container_name: notification-service
+    restart: always
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      PORT: 4006
+      MONGO_URI: ${MONGO_URI_NOTIFICATIONS}
+      KAFKA_BROKER: kafka:9092
+    ports:
+      - "4006:4006"

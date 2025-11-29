@@ -12,8 +12,8 @@ const startServer = async () => {
   try {
     await connectDB();
     
-    app.listen(process.env.PORT || 5002, () => {
-      console.log(`Auth Service running on port ${process.env.PORT || 5002}`);
+    app.listen(process.env.PORT || 4002, () => {
+      console.log(`Restaurant Service running on port ${process.env.PORT || 4002}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
