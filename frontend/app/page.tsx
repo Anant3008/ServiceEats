@@ -6,7 +6,7 @@ import { User } from "lucide-react";
 import Image from "next/image";
 
 async function getLocation() {
-  const res = await fetch(`http://localhost:3000/api/geo`, {
+  const res = await fetch(`http://localhost:3001/api/geo`, {
     cache: "no-store",
   });
   return res.json();
@@ -14,7 +14,7 @@ async function getLocation() {
 
 async function getWeather(city) {
   const res = await fetch(
-    `http://localhost:3000/api/weather?city=${city}`,
+    `http://localhost:3001/api/weather?city=${city}`,
     { cache: "no-store" }
   );
   return res.json();
@@ -22,7 +22,7 @@ async function getWeather(city) {
 
 async function getTrendingMessageFromAI(city, temperature, condition) {
   try {
-    const res = await fetch('http://localhost:3000/api/trending-message', {
+    const res = await fetch('http://localhost:3001/api/trending-message', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ city, temperature, condition }),
