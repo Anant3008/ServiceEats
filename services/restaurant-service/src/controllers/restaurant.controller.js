@@ -33,7 +33,21 @@ const getRestaurants = async (req, res) => {
     }
 }
 
+const getRestaurantById = async (req, res) => {
+    try {
+        const restaurant = await Restaurant.findById(req.params.id);
+        if (!restaurant) {
+            return res.status(404).json({ message: 'Restaurant not found' });
+        }
+        res.status(200).json(restaurant);
+    } catch (error) {
+        console.error('Error fetching restaurant by ID:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 module.exports = {
     addRestaurant,
     getRestaurants,
+    getRestaurantById,
 };
