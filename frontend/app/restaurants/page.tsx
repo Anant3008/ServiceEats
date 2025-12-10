@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Search, Star, Clock, Zap, ShoppingBag, MapPin, TrendingUp } from 'lucide-react';
 
 const CATEGORIES = [
@@ -74,7 +75,7 @@ export default function RestaurantsPage() {
       try {
         const res = await fetch('http://localhost:3000/api/restaurants/api/restaurants');
         const data = await res.json();
-        setRestaurants(data);
+        setRestaurants(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Failed to fetch restaurants:', error);
       } finally {
@@ -86,8 +87,8 @@ export default function RestaurantsPage() {
 
   // Filter restaurants based on search
   const filteredRestaurants = restaurants.filter(res =>
-    res.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (res.cuisine && res.cuisine.toLowerCase().includes(searchTerm.toLowerCase()))
+    (res?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (res?.cuisine || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {
@@ -140,7 +141,7 @@ export default function RestaurantsPage() {
       {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-6 pt-24 pb-12 text-center">
         <h1 className="text-5xl md:text-6xl font-black text-gray-900 mb-4 leading-tight">
-          Discover <span className="bg-linear-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">Local Eats</span>
+          Discover <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">Local Eats</span>
         </h1>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
           Explore handpicked restaurants and order your favorite meals with fast delivery
@@ -168,7 +169,7 @@ export default function RestaurantsPage() {
               onClick={() => setActiveCat(cat.name)}
               className={`px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 whitespace-nowrap flex items-center gap-2 ${
                 activeCat === cat.name 
-                  ? 'bg-linear-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-500/30 scale-105' 
+                  ? 'bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-500/30 scale-105' 
                   : 'bg-white text-gray-700 border border-gray-200 hover:border-orange-300 hover:bg-orange-50'
               }`}
             >
@@ -190,7 +191,9 @@ export default function RestaurantsPage() {
         {filteredRestaurants.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-max">
             {filteredRestaurants.map(res => (
-              <RestaurantCard key={res._id} data={res} />
+              <Link key={res._id} href={`/restaurants/${res._id}`} className="block h-full">
+                <RestaurantCard data={res} />
+              </Link>
             ))}
           </div>
         ) : (
