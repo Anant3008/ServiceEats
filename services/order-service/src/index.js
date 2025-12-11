@@ -2,11 +2,13 @@ const express=require('express');
 require('dotenv').config();
 const connectDB=require('./config/db');
 const orderRoutes=require('./routes/orderRoutes');
+const cartRoutes=require('./routes/cartRoutes');
 
 const app=express();
 
 app.use(express.json());
 app.use('/api/orders', orderRoutes);
+app.use('/api/cart', cartRoutes);
 
 
 const startServer = async () => {
