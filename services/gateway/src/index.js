@@ -32,6 +32,14 @@ app.use('/api/orders', createProxyMiddleware({
   }
 }));
 
+app.use('/api/cart', createProxyMiddleware({
+  target: 'http://order-service:4003',
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/cart': '/api/cart'
+  }
+}));
+
 app.use('/api/payments', createProxyMiddleware({
   target: 'http://payment-service:4004',
   changeOrigin: true,
