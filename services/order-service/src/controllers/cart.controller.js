@@ -94,9 +94,9 @@ const updateCartItem = async (req, res) => {
         const userId = req.userId;
         const { menuItemId, quantity } = req.body;
 
-        if (!menuItemId || quantity === undefined) {
+        if (!menuItemId || quantity == null || typeof quantity !== 'number' || isNaN(quantity)) {
             return res.status(400).json({ 
-                error: 'Menu item ID and quantity are required' 
+                error: 'Menu item ID and a valid quantity are required' 
             });
         }
 
