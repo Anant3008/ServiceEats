@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Clock, MapPin, Star } from "lucide-react";
+import { ArrowLeft, Clock, MapPin, Star, ShoppingCart } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 type MenuItem = {
   _id?: string;
@@ -33,6 +34,9 @@ export default function RestaurantDetailsPage() {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [adding, setAdding] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!id) return;
@@ -155,15 +159,70 @@ export default function RestaurantDetailsPage() {
                         <div className="flex items-center gap-3 flex-shrink-0">
                           <p className="font-bold text-orange-600 whitespace-nowrap">₹{item.price.toFixed(2)}</p>
                           <button
-                            className="px-4 py-2 text-sm font-semibold text-white bg-orange-600 rounded-full hover:bg-orange-700 transition disabled:opacity-50"
-                            disabled={!item.isAvailable}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-orange-600 rounded-full hover:bg-orange-700 transition disabled:opacity-50"
+                            disabled={!item.isAvailable || !user || adding === (item._id || String(idx))}
+                            onClick={async () => {
+                              if (!user) {
+                                setMessage("Please login to add items to cart.");
+                                return;
+                              }
+                              setMessage(null);
+                              const key = item._id || String(idx);
+                              setAdding(key);
+                              try {
+                                const token = localStorage.getItem("token");
+                                const res = await fetch("http://localhost:3000/api/cart/add", {
+                                  method: "POST",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                    Authorization: `Bearer ${token}`,
+                                  },
+                                  body: JSON.stringify({
+                                    restaurantId: restaurant._id,
+                                    restaurantName: restaurant.name,
+                                    menuItemId: item._id,
+                                    name: item.name,
+                                    price: item.price,
+                                    quantity: 1,
+                                  }),
+                                });
+                                if (!res.ok) {
+                                  const data = await res.json().catch(() => ({}));
+                                  throw new Error(data.message || "Failed to add to cart");
+                                }
+                                setMessage("Added to cart!");
+                              } catch (e: any) {
+                                setMessage(e.message || "Unable to add item");
+                              } finally {
+                                setAdding(null);
+                              }
+                            }}
                           >
-                            Add to cart
+                            {adding === (item._id || String(idx)) ? (
+                              <span className="animate-pulse">Adding...</span>
+                            ) : (
+                              <>
+                                <ShoppingCart size={14} />
+                                <span>Add</span>
+                              </>
+                            )}
                           </button>
                         </div>
                       </div>
                     ))}
                   </div>
+                  {message && (
+                    <div
+                      className="mt-4 p-3 rounded-lg border text-sm"
+                      style={{
+                        background: message.includes("Added") ? "#ECFDF5" : "#FEF2F2",
+                        borderColor: message.includes("Added") ? "#10B981" : "#FCA5A5",
+                        color: message.includes("Added") ? "#065F46" : "#7F1D1D",
+                      }}
+                    >
+                      {message}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4">

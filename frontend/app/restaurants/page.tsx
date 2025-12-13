@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, Star, Clock, Zap, ShoppingBag, MapPin, TrendingUp } from 'lucide-react';
+import { Search, Star, Clock, Zap, ShoppingBag, MapPin, TrendingUp, ShoppingCart } from 'lucide-react';
 
 const CATEGORIES = [
   { name: "All", icon: "🍽️" },
@@ -130,9 +130,13 @@ export default function RestaurantsPage() {
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="p-2.5 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-full transition-all duration-300">
-              <ShoppingBag size={22} />
-            </button>
+            <Link 
+              href="/cart"
+              className="inline-flex items-center gap-2 px-4 py-2 text-orange-700 font-bold bg-orange-50 border border-orange-200 rounded-full hover:bg-orange-100 transition-all"
+            >
+              <ShoppingCart size={18} />
+              <span className="hidden sm:inline">View Cart</span>
+            </Link>
             <button className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all"></button>
           </div>
         </div>
