@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { User, Mail, Lock, AlertCircle, Loader2 } from 'lucide-react';
+import { User, Mail, Lock, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -19,7 +19,6 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
 
-    // Validation
     if (!name || !email || !password || !confirmPassword) {
       setError('Please fill in all fields');
       return;
@@ -27,11 +26,6 @@ export default function RegisterPage() {
 
     if (!email.includes('@')) {
       setError('Please enter a valid email');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
       return;
     }
 
@@ -49,140 +43,141 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-black text-gray-900 mb-2">
-            Service<span className="text-orange-600">Eats</span>
-          </h1>
-          <p className="text-gray-600">Create your account and start ordering!</p>
+    <div className="min-h-screen flex w-full bg-white">
+      
+      {/* --- LEFT SIDE: HERO IMAGE --- */}
+      <div className="hidden lg:flex w-1/2 relative bg-gray-900 overflow-hidden order-last lg:order-first">
+        <div 
+          className="absolute inset-0 bg-cover bg-center opacity-90"
+          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80')" }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/90"></div>
+        
+        <div className="relative z-10 w-full h-full flex flex-col justify-end p-16 text-white">
+           <h2 className="text-5xl font-black mb-4 leading-tight">Join the <br/> <span className="text-orange-500">Food Revolution.</span></h2>
+           <p className="text-gray-300 text-xl max-w-md mb-8">Create an account to unlock exclusive offers, free delivery, and personalized recommendations.</p>
+           
+           <div className="flex gap-6">
+              <div className="flex items-center gap-2">
+                 <CheckCircle2 className="text-green-400" /> 
+                 <span className="font-semibold">No Hidden Fees</span>
+              </div>
+              <div className="flex items-center gap-2">
+                 <CheckCircle2 className="text-green-400" /> 
+                 <span className="font-semibold">Fast Delivery</span>
+              </div>
+           </div>
         </div>
+      </div>
 
-        {/* Register Card */}
-        <div className="bg-white rounded-2xl shadow-xl border border-orange-100 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Sign Up</h2>
+      {/* --- RIGHT SIDE: FORM --- */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 lg:p-12 animate-[slideInRight_0.5s_ease-out]">
+        <div className="w-full max-w-md space-y-8">
+          
+          <div className="text-center lg:text-left">
+            <h1 className="text-4xl font-black text-gray-900 mb-2 tracking-tighter">
+              Create Account
+            </h1>
+            <p className="text-gray-500 text-lg">Join ServiceEats and start ordering today.</p>
+          </div>
 
-          {/* Error Message */}
           {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-              <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
-              <p className="text-sm text-red-800">{error}</p>
+            <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-lg flex items-center gap-3 animate-pulse">
+              <AlertCircle size={20} />
+              <span className="text-sm font-medium">{error}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Name Input */}
-            <div>
-              <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
-                Full Name
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-700 ml-1">Full Name</label>
+              <div className="relative group">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors" size={20} />
                 <input
-                  id="name"
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="John Doe"
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition"
+                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all font-medium text-gray-900"
                   disabled={isLoading}
                 />
               </div>
             </div>
 
-            {/* Email Input */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-700 ml-1">Email Address</label>
+              <div className="relative group">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors" size={20} />
                 <input
-                  id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition"
+                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all font-medium text-gray-900"
                   disabled={isLoading}
                 />
               </div>
             </div>
 
-            {/* Password Input */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition"
-                  disabled={isLoading}
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700 ml-1">Password</label>
+                <div className="relative group">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors" size={20} />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all font-medium text-gray-900"
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700 ml-1">Confirm</label>
+                <div className="relative group">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors" size={20} />
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all font-medium text-gray-900"
+                    disabled={isLoading}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Confirm Password Input */}
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-2">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition"
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-orange-600 to-orange-500 text-white py-3 rounded-lg font-semibold hover:from-orange-700 hover:to-orange-600 transition-all shadow-lg shadow-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
                   <Loader2 className="animate-spin" size={20} />
-                  Creating account...
+                  <span>Creating Account...</span>
                 </>
               ) : (
-                'Sign Up'
+                'Create Account'
               )}
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="mt-6 text-center">
-            <p className="text-gray-600 text-sm">
+          <div className="text-center pt-4">
+            <p className="text-gray-500">
               Already have an account?{' '}
-              <Link href="/auth/login" className="text-orange-600 font-semibold hover:text-orange-700">
-                Login
+              <Link href="/auth/login" className="text-orange-600 font-bold hover:underline transition">
+                Log in here
               </Link>
             </p>
           </div>
         </div>
-
-        {/* Back to Home */}
-        <div className="mt-6 text-center">
-          <Link href="/" className="text-gray-600 hover:text-orange-600 text-sm font-medium">
-            ← Back to Home
-          </Link>
-        </div>
       </div>
+
     </div>
   );
 }
