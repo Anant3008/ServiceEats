@@ -73,7 +73,7 @@ export default function RestaurantsPage() {
   useEffect(() => {
     async function fetchRestaurants() {
       try {
-        const res = await fetch('http://localhost:3000/api/restaurants/api/restaurants');
+        const res = await fetch('http://localhost:3000/api/restaurants');
         const data = await res.json();
         setRestaurants(Array.isArray(data) ? data : []);
       } catch (error) {

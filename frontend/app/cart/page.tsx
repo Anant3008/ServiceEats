@@ -61,7 +61,7 @@ export default function CartPage() {
   const updateQuantity = async (menuItemId: string, quantity: number) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/cart/api/cart/update", {
+      const res = await fetch("http://localhost:3000/api/cart/update", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -81,7 +81,7 @@ export default function CartPage() {
   const removeItem = async (menuItemId: string) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/cart/api/cart/remove", {
+      const res = await fetch("http://localhost:3000/api/cart/remove", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -101,7 +101,7 @@ export default function CartPage() {
   const clearCart = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/cart/api/cart/clear", {
+      const res = await fetch("http://localhost:3000/api/cart/clear", {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -119,7 +119,7 @@ export default function CartPage() {
   const checkout = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/cart/api/cart/checkout", {
+      const res = await fetch("http://localhost:3000/api/cart/checkout", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

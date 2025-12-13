@@ -67,7 +67,7 @@ export default async function HomePage() {
         <div className="text-2xl font-extrabold text-orange-600 tracking-tighter">
           Service Eats.
         </div>
-        <a href="/auth" className="flex items-center gap-2 px-5 py-2 text-orange-600 font-bold border-2 border-orange-200 rounded-full hover:bg-orange-100 transition-all bg-white">
+        <a href="/auth/login" className="flex items-center gap-2 px-5 py-2 text-orange-600 font-bold border-2 border-orange-200 rounded-full hover:bg-orange-100 transition-all bg-white">
           <User size={18} />
           <span>Login / Sign Up</span>
         </a>

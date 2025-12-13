@@ -38,7 +38,7 @@ export default function RestaurantDetailsPage() {
     if (!id) return;
     async function fetchRestaurant() {
       try {
-        const res = await fetch(`http://localhost:3000/api/restaurants/api/restaurants/${id}`);
+        const res = await fetch(`http://localhost:3000/api/restaurants/${id}`);
         if (!res.ok) {
           throw new Error(`Failed to load restaurant (${res.status})`);
         }
