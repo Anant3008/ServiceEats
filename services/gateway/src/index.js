@@ -6,63 +6,43 @@ require('dotenv').config();
 const app = express();
 
 app.use(cors());
-app.use(express.json());
 
 app.use('/api/auth', createProxyMiddleware({
-  target: 'http://user-service:4001',
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/auth': '/api/auth'
-  }
+  target: 'http://user-service:4001/api/auth',
+  changeOrigin: true
 }));
 
 app.use('/api/restaurants', createProxyMiddleware({
-  target: 'http://restaurant-service:4002',
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/restaurants': '/api/restaurants'
-  }
+  target: 'http://restaurant-service:4002/api/restaurants',
+  changeOrigin: true
 }));
 
 app.use('/api/orders', createProxyMiddleware({
-  target: 'http://order-service:4003',
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/orders': '/api/orders'
-  }
+  target: 'http://order-service:4003/api/orders',
+  changeOrigin: true
 }));
 
 app.use('/api/cart', createProxyMiddleware({
-  target: 'http://order-service:4003',
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/cart': '/api/cart'
-  }
+  target: 'http://order-service:4003/api/cart',
+  changeOrigin: true
 }));
 
 app.use('/api/payments', createProxyMiddleware({
-  target: 'http://payment-service:4004',
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/payments': '/api/payments'
-  }
+  target: 'http://payment-service:4004/api/payments',
+  changeOrigin: true
 }));
 
 app.use('/api/deliveries', createProxyMiddleware({
-  target: 'http://delivery-service:4005',
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/deliveries': '/api/deliveries'
-  }
+  target: 'http://delivery-service:4005/api/deliveries',
+  changeOrigin: true
 }));
 
 app.use('/api/notifications', createProxyMiddleware({
-  target: 'http://notification-service:4006',
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/notifications': '/api/notifications'
-  }
+  target: 'http://notification-service:4006/api/notifications',
+  changeOrigin: true
 }));
+
+app.use(express.json());
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'Gateway is running' });
