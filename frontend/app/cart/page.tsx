@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import Navbar from "@/components/Navbar";
+import Link from 'next/link'
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -116,25 +117,9 @@ export default function CartPage() {
     }
   };
 
-  const checkout = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/cart/checkout", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        alert(`Order placed successfully! Order ID: ${data.order._id}`);
-        setCart(null);
-        router.push("/orders");
-      }
-    } catch (err) {
-      console.error("Failed to checkout:", err);
-    }
+  // Navigate to the dedicated checkout page
+  const goToCheckout = () => {
+    router.push("/checkout");
   };
 
   if (authLoading || loading) {
@@ -247,7 +232,7 @@ export default function CartPage() {
           </div>
 
           <button
-            onClick={checkout}
+            onClick={goToCheckout}
             className="w-full py-4 bg-orange-600 text-white font-bold rounded-full hover:bg-orange-500 transition-all flex items-center justify-center gap-2"
           >
             Proceed to Checkout <ArrowRight size={20} />
