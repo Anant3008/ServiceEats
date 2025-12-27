@@ -10,8 +10,8 @@ router.post('/create', createOrder);
 // Route to get all orders
 router.get('/', getallOrders);
 
-// Route to get orders by user
-router.get('/user/:userId', getOrdersByUser);
+// Route to get orders by user (requires auth)
+router.get('/user/:userId', authenticateToken, getOrdersByUser);
 
 // Get single order by ID (requires auth)
 router.get('/:orderId', authenticateToken, getOrderById);
