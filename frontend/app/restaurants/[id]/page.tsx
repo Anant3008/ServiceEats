@@ -3,8 +3,9 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Clock, MapPin, Star, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Clock, MapPin, Star, ShoppingCart, Plus, Minus } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import StickyCartFooter from "@/components/StickyCartFooter";
 
 type MenuItem = {
   _id?: string;
@@ -27,6 +28,11 @@ type Restaurant = {
   menu?: MenuItem[];
 };
 
+interface CartItem {
+  menuItemId: string;
+  quantity: number;
+}
+
 export default function RestaurantDetailsPage() {
   const params = useParams();
   const id = typeof params?.id === "string" ? params.id : Array.isArray(params?.id) ? params.id[0] : "";
@@ -36,6 +42,9 @@ export default function RestaurantDetailsPage() {
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [cart, setCart] = useState<Map<string, number>>(new Map());
+  const [cartCount, setCartCount] = useState(0);
+  const [updatingItem, setUpdatingItem] = useState<string | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -56,6 +65,126 @@ export default function RestaurantDetailsPage() {
     }
     fetchRestaurant();
   }, [id]);
+
+  // Fetch cart to populate quantities
+  useEffect(() => {
+    if (!user) return;
+    async function fetchCart() {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:3000/api/cart", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.items && Array.isArray(data.items)) {
+            const cartMap = new Map<string, number>();
+            let total = 0;
+            data.items.forEach((item: any) => {
+              cartMap.set(item.menuItemId, item.quantity);
+              total += item.quantity;
+            });
+            setCart(cartMap);
+            setCartCount(total);
+          }
+        }
+      } catch (err) {
+        console.log("Failed to fetch cart");
+      }
+    }
+    fetchCart();
+  }, [user]);
+
+  const handleAddToCart = async (item: MenuItem) => {
+    if (!user) {
+      setMessage("Please login to add items to cart.");
+      return;
+    }
+
+    const key = item._id || item.name;
+    setAdding(key);
+    setMessage(null);
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:3000/api/cart/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          restaurantId: restaurant!._id,
+          restaurantName: restaurant!.name,
+          menuItemId: item._id,
+          name: item.name,
+          price: item.price,
+          quantity: 1,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || "Failed to add to cart");
+      }
+
+      // Update cart state
+      const newQty = (cart.get(key) || 0) + 1;
+      const newCart = new Map(cart);
+      newCart.set(key, newQty);
+      setCart(newCart);
+      setCartCount(cartCount + 1);
+      setMessage("Added to cart!");
+    } catch (e: any) {
+      setMessage(e.message || "Unable to add item");
+    } finally {
+      setAdding(null);
+    }
+  };
+
+  const handleUpdateQuantity = async (item: MenuItem, newQuantity: number) => {
+    const key = item._id || item.name;
+    setUpdatingItem(key);
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:3000/api/cart/update", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          menuItemId: item._id,
+          quantity: newQuantity,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update cart");
+      }
+
+      // Update cart state
+      const newCart = new Map(cart);
+      const oldQty = newCart.get(key) || 0;
+      const difference = newQuantity - oldQty;
+
+      if (newQuantity === 0) {
+        newCart.delete(key);
+      } else {
+        newCart.set(key, newQuantity);
+      }
+
+      setCart(newCart);
+      setCartCount(cartCount + difference);
+    } catch (e: any) {
+      setMessage(e.message || "Unable to update cart");
+    } finally {
+      setUpdatingItem(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -85,7 +214,7 @@ export default function RestaurantDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-orange-50 text-gray-900">
+    <div className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-orange-50 text-gray-900 pb-28">
       {/* Top Bar */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-orange-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
@@ -145,71 +274,64 @@ export default function RestaurantDetailsPage() {
                 <div className="bg-white border border-gray-200 rounded-2xl p-6">
                   <h2 className="text-xl font-bold text-gray-900 mb-4">Menu</h2>
                   <div className="space-y-3">
-                    {restaurant.menu.map((item, idx) => (
-                      <div
-                        key={item._id || idx}
-                        className={`flex items-center justify-between gap-4 p-4 rounded-lg border ${
-                          item.isAvailable ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-100 opacity-60'
-                        }`}
-                      >
-                        <div className="min-w-0">
-                          <p className="font-semibold text-gray-900 truncate">{item.name}</p>
-                          {!item.isAvailable && <p className="text-xs text-gray-500 mt-1">Not available</p>}
-                        </div>
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                          <p className="font-bold text-orange-600 whitespace-nowrap">₹{item.price.toFixed(2)}</p>
-                          <button
-                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-orange-600 rounded-full hover:bg-orange-700 transition disabled:opacity-50"
-                            disabled={!item.isAvailable || !user || adding === (item._id || String(idx))}
-                            onClick={async () => {
-                              if (!user) {
-                                setMessage("Please login to add items to cart.");
-                                return;
-                              }
-                              setMessage(null);
-                              const key = item._id || String(idx);
-                              setAdding(key);
-                              try {
-                                const token = localStorage.getItem("token");
-                                const res = await fetch("http://localhost:3000/api/cart/add", {
-                                  method: "POST",
-                                  headers: {
-                                    "Content-Type": "application/json",
-                                    Authorization: `Bearer ${token}`,
-                                  },
-                                  body: JSON.stringify({
-                                    restaurantId: restaurant._id,
-                                    restaurantName: restaurant.name,
-                                    menuItemId: item._id,
-                                    name: item.name,
-                                    price: item.price,
-                                    quantity: 1,
-                                  }),
-                                });
-                                if (!res.ok) {
-                                  const data = await res.json().catch(() => ({}));
-                                  throw new Error(data.message || "Failed to add to cart");
-                                }
-                                setMessage("Added to cart!");
-                              } catch (e: any) {
-                                setMessage(e.message || "Unable to add item");
-                              } finally {
-                                setAdding(null);
-                              }
-                            }}
-                          >
-                            {adding === (item._id || String(idx)) ? (
-                              <span className="animate-pulse">Adding...</span>
+                    {restaurant.menu.map((item, idx) => {
+                      const itemKey = item._id || String(idx);
+                      const quantity = cart.get(itemKey) || 0;
+
+                      return (
+                        <div
+                          key={itemKey}
+                          className={`flex items-center justify-between gap-4 p-4 rounded-lg border ${
+                            item.isAvailable ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-100 opacity-60'
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <p className="font-semibold text-gray-900 truncate">{item.name}</p>
+                            {!item.isAvailable && <p className="text-xs text-gray-500 mt-1">Not available</p>}
+                          </div>
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            <p className="font-bold text-orange-600 whitespace-nowrap">₹{item.price.toFixed(2)}</p>
+                            
+                            {quantity === 0 ? (
+                              // Add to Cart Button
+                              <button
+                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-orange-600 rounded-full hover:bg-orange-700 transition disabled:opacity-50"
+                                disabled={!item.isAvailable || !user || adding === itemKey}
+                                onClick={() => handleAddToCart(item)}
+                              >
+                                {adding === itemKey ? (
+                                  <span className="animate-pulse">Adding...</span>
+                                ) : (
+                                  <>
+                                    <ShoppingCart size={14} />
+                                    <span>Add</span>
+                                  </>
+                                )}
+                              </button>
                             ) : (
-                              <>
-                                <ShoppingCart size={14} />
-                                <span>Add</span>
-                              </>
+                              // Quantity Control
+                              <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-full px-2 py-1">
+                                <button
+                                  onClick={() => handleUpdateQuantity(item, quantity - 1)}
+                                  disabled={updatingItem === itemKey}
+                                  className="p-1 hover:bg-orange-100 rounded-full transition disabled:opacity-50"
+                                >
+                                  <Minus size={16} className="text-orange-600" />
+                                </button>
+                                <span className="font-bold text-orange-600 min-w-[2rem] text-center">{quantity}</span>
+                                <button
+                                  onClick={() => handleUpdateQuantity(item, quantity + 1)}
+                                  disabled={updatingItem === itemKey}
+                                  className="p-1 hover:bg-orange-100 rounded-full transition disabled:opacity-50"
+                                >
+                                  <Plus size={16} className="text-orange-600" />
+                                </button>
+                              </div>
                             )}
-                          </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   {message && (
                     <div
@@ -243,6 +365,8 @@ export default function RestaurantDetailsPage() {
           </div>
         </div>
       </main>
+
+      <StickyCartFooter cartCount={cartCount} />
     </div>
   );
 }
