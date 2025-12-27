@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { User, LogOut, ShoppingCart } from "lucide-react";
+import { User, LogOut, ShoppingCart, History } from "lucide-react";
 import Link from "next/link";
 
 export default function Navbar() {
@@ -16,6 +16,14 @@ export default function Navbar() {
       <div className="flex items-center gap-4">
         {user ? (
           <>
+            <Link 
+              href="/orders" 
+              className="flex items-center gap-2 px-4 py-2 text-orange-600 font-medium hover:bg-orange-50 rounded-full transition-all"
+            >
+              <History size={18} />
+              <span className="hidden sm:inline">Orders</span>
+            </Link>
+
             <Link 
               href="/cart" 
               className="flex items-center gap-2 px-4 py-2 text-orange-600 font-medium hover:bg-orange-50 rounded-full transition-all"
