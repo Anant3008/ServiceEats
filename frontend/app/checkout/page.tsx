@@ -5,6 +5,9 @@ import { useRequireAuth } from "@/hooks/useRequireAuth";
 import Navbar from "@/components/Navbar";
 import { ArrowLeft, CreditCard, Smartphone, Wallet, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
+import { createPayment } from "@/utils/paymentApi";
 
 interface CartItem {
   menuItemId: string;
@@ -28,7 +31,42 @@ const PAYMENT_METHODS = [
   { id: "wallet", name: "Wallet", icon: Wallet, desc: "ServiceEats Wallet" },
 ];
 
-export default function CheckoutPage() {
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY || "");
+
+function CardPaymentForm({
+  disabled,
+  error,
+}: {
+  disabled: boolean;
+  error: string;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="p-3 border rounded-lg bg-white">
+        <CardElement
+          options={{
+            style: {
+              base: { fontSize: "16px", color: "#1f2937" },
+              invalid: { color: "#dc2626" },
+            },
+          }}
+        />
+      </div>
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+          {error}
+        </div>
+      )}
+      {disabled && (
+        <div className="text-xs text-gray-500">
+          Initializing Stripe... please wait.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CheckoutContent() {
   const { user, loading: authLoading } = useRequireAuth();
   const router = useRouter();
   const [cart, setCart] = useState<Cart | null>(null);
@@ -36,6 +74,10 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [selectedPayment, setSelectedPayment] = useState("upi");
   const [processing, setProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
+
+  const stripe = useStripe();
+  const elements = useElements();
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -76,31 +118,61 @@ export default function CheckoutPage() {
 
   const handlePayment = async () => {
     if (!cart) return;
-    
+    if (!stripe || !elements) {
+      setPaymentError("Stripe not ready yet. Please wait a moment and try again.");
+      return;
+    }
+
+    // For now, we fully support card payments. UPI/wallet will use the same flow once enabled.
+    if (selectedPayment !== "card") {
+      setPaymentError("For now, please use Card. UPI/Wallet can be wired later.");
+      return;
+    }
+
     setProcessing(true);
+    setPaymentError("");
+    setError("");
+
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:3000/api/orders/process-payment`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          paymentMethod: selectedPayment,
-        }),
+      const subtotal = cart.totalAmount;
+      const tax = Math.round(subtotal * 0.05);
+      const total = subtotal + tax + DELIVERY_FEE;
+
+      // 1) Create PaymentIntent via our backend
+      const { clientSecret, orderId: backendOrderId } = await createPayment({
+        orderId: cart._id, // using cart id as order reference for now
+        userId: user?.userId,
+        amount: total,
+        currency: "inr",
+        paymentMethod: selectedPayment,
+        token,
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        // Redirect to order confirmation
-        router.push(`/orders/${data.orderId}`);
-      } else {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || "Payment failed");
+      // 2) Confirm card payment on frontend
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) {
+        throw new Error("Payment form not ready. Please try again.");
       }
+
+      const confirmResult = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
+        },
+      });
+
+      if (confirmResult.error) {
+        throw new Error(confirmResult.error.message || "Card confirmation failed");
+      }
+
+      if (confirmResult.paymentIntent?.status === "succeeded") {
+        router.push(`/orders/${backendOrderId || cart._id}`);
+        return;
+      }
+
+      throw new Error("Payment did not complete. Please try again.");
     } catch (err: any) {
-      setError(err.message || "Payment processing failed");
+      setPaymentError(err.message || "Payment processing failed");
       setProcessing(false);
     }
   };
@@ -234,11 +306,11 @@ export default function CheckoutPage() {
 
           {/* Right: Payment Method Selection */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-32">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Payment Method</h2>
+            <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-32 space-y-4">
+              <h2 className="text-xl font-bold text-gray-900">Payment Method</h2>
               
               {/* Payment Options */}
-              <div className="space-y-3 mb-6">
+              <div className="space-y-3">
                 {PAYMENT_METHODS.map((method) => {
                   const Icon = method.icon;
                   return (
@@ -270,9 +342,14 @@ export default function CheckoutPage() {
                 })}
               </div>
 
-              {/* Error Message */}
+              {/* Card form (only shown for card selection) */}
+              {selectedPayment === "card" && (
+                <CardPaymentForm disabled={!stripe || !elements} error={paymentError} />
+              )}
+
+              {/* Error Message (legacy) */}
               {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
                   {error}
                 </div>
               )}
@@ -280,7 +357,7 @@ export default function CheckoutPage() {
               {/* Pay Button */}
               <button
                 onClick={handlePayment}
-                disabled={processing}
+                disabled={processing || !stripe || !elements}
                 className="w-full py-4 bg-orange-600 text-white font-bold rounded-full hover:bg-orange-500 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {processing ? (
@@ -293,14 +370,21 @@ export default function CheckoutPage() {
                 )}
               </button>
 
-              {/* Info */}
-              <p className="text-xs text-gray-500 mt-4 text-center">
-                This is a demo. Your order will be created with a mock payment.
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                Use Stripe test card 4242 4242 4242 4242 (any future expiry, any CVC).
               </p>
             </div>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Elements stripe={stripePromise}>
+      <CheckoutContent />
+    </Elements>
   );
 }

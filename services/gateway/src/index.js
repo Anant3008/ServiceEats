@@ -28,12 +28,12 @@ app.use('/api/cart', createProxyMiddleware({
 }));
 
 app.use('/api/payments', createProxyMiddleware({
-  target: 'http://payment-service:4004/api/payments',
+  target: 'http://payment-service:4005/api/payments',
   changeOrigin: true
 }));
 
 app.use('/api/deliveries', createProxyMiddleware({
-  target: 'http://delivery-service:4005/api/deliveries',
+  target: 'http://delivery-service:4004/api/deliveries',
   changeOrigin: true
 }));
 

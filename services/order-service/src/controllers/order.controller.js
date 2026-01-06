@@ -5,11 +5,14 @@ const { produceEvent } = require('../kafka/producer');
 
 const createOrder = async (req, res) => {
     try {
-        const { userId, restaurantId, items } = req.body;
+        const { restaurantId, items } = req.body;
+        const userId = req.userId; // Get from auth middleware
 
-        const {data: restaurant} = await axios.get(`http://localhost:3001/restaurants/${restaurantId}`);
+        // ✅ FIXED: Use gateway instead of direct service call
+        const restaurantRes = await axios.get(`http://gateway:3000/api/restaurants/${restaurantId}`);
+        const restaurant = restaurantRes.data;
 
-        if(!restaurant){
+        if (!restaurant) {
             return res.status(404).json({error:'Restaurant not found'});
         }
 
@@ -127,62 +130,4 @@ module.exports = {
     getallOrders,
     getOrdersByUser,
     getOrderById,
-    // New export added below
 };
-
-// Process payment and create order from user's active cart
-// This is used by the fake payment UI to finalize checkout in one step
-const processPaymentFromCart = async (req, res) => {
-    try {
-        const userId = req.userId;
-        const { paymentMethod } = req.body || {};
-
-        // Find active cart for the user
-        const cart = await Cart.findOne({ userId, status: 'active' });
-        if (!cart || !cart.items || cart.items.length === 0) {
-            return res.status(400).json({ error: 'Cart is empty' });
-        }
-
-        // Create order with pending payment status
-        const newOrder = new Order({
-            userId,
-            restaurantId: cart.restaurantId,
-            items: cart.items.map(item => ({
-                name: item.name,
-                quantity: item.quantity,
-                price: item.price
-            })),
-            totalAmount: cart.totalAmount,
-            paymentStatus: 'pending',
-            deliveryStatus: 'pending'
-        });
-
-        await newOrder.save();
-
-        // Mark cart as ordered so it won't be reused
-        cart.status = 'ordered';
-        await cart.save();
-
-        // Emit event for payment service to process payment
-        await produceEvent('order_created', {
-            orderId: newOrder._id,
-            userId,
-            restaurantId: cart.restaurantId,
-            items: cart.items,
-            totalAmount: cart.totalAmount,
-            paymentMethod: paymentMethod || 'upi',
-            status: 'created'
-        });
-
-        return res.status(200).json({
-            success: true,
-            orderId: newOrder._id,
-            message: 'Order created, processing payment...'
-        });
-    } catch (error) {
-        console.error('Error processing payment from cart:', error);
-        return res.status(500).json({ error: 'Failed to process order' });
-    }
-};
-
-module.exports.processPaymentFromCart = processPaymentFromCart;

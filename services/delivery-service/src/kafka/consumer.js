@@ -11,12 +11,12 @@ const consumer = kafka.consumer({groupId: 'delivery-group'});
 
 const startConsumer = async () => {
     await consumer.connect();
-    await consumer.subscribe({topic: 'payment_success', fromBeginning: true});
+    await consumer.subscribe({topic: 'payment.succeeded', fromBeginning: true});
 
     await consumer.run({
         eachMessage: async({topic,message}) => {
             const data = JSON.parse(message.value.toString());
-            console.log('Received payment_success event:', data);
+            console.log('Received payment.succeeded event:', data);
 
             // Delivery service assigns its own driver and location
             const assignedDriverName = 'Rahul Sharma';
@@ -31,7 +31,7 @@ const startConsumer = async () => {
 
             console.log('Delivery assigned to driver:', assignedDriverName, 'for order:', data.orderId);
 
-            await produceEvent('delivery_assigned', {
+            await produceEvent('delivery.assigned', {
                 orderId: delivery.orderId,
                 driverName: delivery.driverName,
                 location: delivery.location,
@@ -42,7 +42,7 @@ const startConsumer = async () => {
                 delivery.status = 'delivered';
                 await delivery.save();
 
-                await produceEvent('delivery_completed', {
+                await produceEvent('delivery.completed', {
                     orderId: delivery.orderId,
                     driverName: delivery.driverName,
                     location: delivery.location,

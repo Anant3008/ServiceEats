@@ -11,12 +11,12 @@ const consumer = kafka.consumer({ groupId: "notification-group" });
 const startConsumer = async () => {
     await consumer.connect();
 
-    await consumer.subscribe({ topic: "order-delivered", fromBeginning: true });
+    await consumer.subscribe({ topic: "delivery.completed", fromBeginning: true });
 
     await consumer.run({
         eachMessage: async ({ message }) => {
             const data = JSON.parse(message.value.toString());
-            console.log("📦 Received order-delivered event:", data);
+            console.log("📦 Received delivery.completed event:", data);
 
             await Notification.create({
                 userId: data.userId,
