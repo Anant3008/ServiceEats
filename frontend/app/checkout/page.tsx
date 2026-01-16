@@ -166,7 +166,7 @@ function CheckoutContent() {
       }
 
       if (confirmResult.paymentIntent?.status === "succeeded") {
-        router.push(`/orders/${backendOrderId || cart._id}`);
+        router.push(`/payment-success?orderId=${backendOrderId || cart._id}`);
         return;
       }
 
