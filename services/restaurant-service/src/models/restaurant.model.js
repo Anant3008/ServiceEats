@@ -13,6 +13,10 @@ const restaurantSchema=new mongoose.Schema({
         type:String,
         required:true,
     },
+    imageUrl:{
+        type:String,
+        default:'',
+    },
     rating:{
         type:Number,
         default:0,

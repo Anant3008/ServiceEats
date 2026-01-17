@@ -21,6 +21,7 @@ type Restaurant = {
   rating?: number;
   deliveryTime?: string;
   image?: string;
+  imageUrl?: string;
   address?: string;
   location?: string;
   costForTwo?: string;
@@ -233,7 +234,7 @@ export default function RestaurantDetailsPage() {
         <div className="bg-white rounded-3xl border border-orange-100 shadow-lg overflow-hidden">
           <div className="relative h-64 sm:h-80 bg-gray-100">
             <img
-              src={restaurant.image || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1600&q=80"}
+              src={restaurant.imageUrl || restaurant.image || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1600&q=80"}
               alt={restaurant.name}
               className="w-full h-full object-cover"
             />

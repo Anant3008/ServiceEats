@@ -25,7 +25,7 @@ const RestaurantCard = ({ data }: { data: any }) => (
         </div>
       )}
       <img 
-        src={data.image || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&w=800&q=80"} 
+        src={data.imageUrl || data.image || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&w=800&q=80"} 
         alt={data.name} 
         className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" 
       />

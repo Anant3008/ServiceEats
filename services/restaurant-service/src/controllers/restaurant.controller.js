@@ -3,18 +3,19 @@ const {produceEvent} = require('../kafka/producer');
 
 const addRestaurant = async (req, res) => {
     try {
-        const { name, address, cuisine } = req.body;
+        const { name, address, cuisine, imageUrl } = req.body;
         if (!name || !address || !cuisine) {
             return res.status(400).json({ message: 'All fields are required' });
         }
-        const newRestaurant = new Restaurant({ name, address, cuisine });
+        const newRestaurant = new Restaurant({ name, address, cuisine, imageUrl });
         await newRestaurant.save();
 
-        await produceEvent('restaurant_added', {
+        await produceEvent('restaurant.added', {
             restaurantId: newRestaurant._id,
             name: newRestaurant.name,
             address: newRestaurant.address,
             cuisine: newRestaurant.cuisine,
+            imageUrl: newRestaurant.imageUrl,
         });
         res.status(201).json({ message: 'Restaurant added successfully' });
     } catch (error) {
