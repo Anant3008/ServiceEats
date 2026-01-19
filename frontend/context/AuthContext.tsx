@@ -5,6 +5,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 interface User {
   userId: string;
   email: string;
+  name?: string;
   role?: string;
 }
 
@@ -15,6 +16,8 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
+  isHydrating: boolean;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,6 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isHydrating, setIsHydrating] = useState(true);
 
   // Load token from localStorage on mount
   useEffect(() => {
@@ -36,6 +40,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Failed to load auth from localStorage:', error);
+    } finally {
+      setIsHydrating(false);
     }
   }, []);
 
@@ -59,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userData: User = {
         userId: payload.userId,
         email: payload.email,
+        name: payload.name,
         role: payload.role
       };
 
@@ -107,8 +114,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('user');
   };
 
+  const refreshUser = async () => {
+    if (!token) return;
+
+    try {
+      const response = await fetch('http://localhost:3000/api/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const profileData = await response.json();
+        const updatedUser: User = {
+          userId: profileData.userId,
+          email: profileData.email,
+          name: profileData.name,
+          role: profileData.role
+        };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+    } catch (error) {
+      console.error('Error refreshing user:', error);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout, isLoading, isHydrating, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

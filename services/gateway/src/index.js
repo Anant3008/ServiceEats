@@ -12,6 +12,11 @@ app.use('/api/auth', createProxyMiddleware({
   changeOrigin: true
 }));
 
+app.use('/api/profile', createProxyMiddleware({
+  target: 'http://user-service:4001/api/profile',
+  changeOrigin: true
+}));
+
 app.use('/api/restaurants', createProxyMiddleware({
   target: 'http://restaurant-service:4002/api/restaurants',
   changeOrigin: true

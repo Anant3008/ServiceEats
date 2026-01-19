@@ -32,10 +32,13 @@ export default function Navbar() {
               <span className="hidden sm:inline">Cart</span>
             </Link>
             
-            <div className="flex items-center gap-2 px-4 py-2 text-gray-700 font-medium bg-orange-50 rounded-full">
+            <Link 
+              href="/profile" 
+              className="flex items-center gap-2 px-4 py-2 text-gray-700 font-medium bg-orange-50 rounded-full hover:bg-orange-100 transition-all"
+            >
               <User size={18} className="text-orange-600" />
-              <span className="hidden sm:inline max-w-[150px] truncate">{user.email}</span>
-            </div>
+              <span className="hidden sm:inline max-w-[150px] truncate">{user.name || user.email}</span>
+            </Link>
             
             <button
               onClick={logout}

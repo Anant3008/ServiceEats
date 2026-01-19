@@ -7,6 +7,7 @@ const app=express();
 app.use(express.json());
 
 app.use('/api/auth',require('./routes/authRoutes'));
+app.use('/api/profile',require('./routes/profileRoutes'));
 
 const startServer = async () => {
   try {
