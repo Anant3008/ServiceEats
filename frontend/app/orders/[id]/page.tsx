@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import Navbar from "@/components/Navbar";
 import { useParams, useRouter } from "next/navigation";
-import { CheckCircle, Clock, Truck, Home, Loader2, AlertCircle } from "lucide-react";
+import { CheckCircle, Clock, Truck, Home, Loader2, AlertCircle, Star } from "lucide-react";
 
 interface OrderItem {
   name: string;
@@ -56,6 +56,14 @@ export default function OrderPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [orderRating, setOrderRating] = useState(0);
+  const [restaurantRating, setRestaurantRating] = useState(0);
+  const [orderReview, setOrderReview] = useState("");
+  const [restaurantReview, setRestaurantReview] = useState("");
+  const [submittingRating, setSubmittingRating] = useState(false);
+  const [ratingError, setRatingError] = useState("");
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
+  const [existingRating, setExistingRating] = useState<any | null>(null);
 
   // Fetch order details
   const fetchOrder = async () => {
@@ -100,11 +108,70 @@ export default function OrderPage() {
     }
   };
 
+  const fetchExistingRating = async () => {
+    if (!orderId) return;
+    try {
+      const res = await fetch(`http://localhost:3000/api/ratings/order/${orderId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setExistingRating(data);
+        setRatingSubmitted(true);
+      }
+    } catch (err) {
+      // Ignore if not rated yet
+    }
+  };
+
+  const handleSubmitRating = async () => {
+    if (orderRating === 0 || restaurantRating === 0) {
+      setRatingError("Please rate both delivery and restaurant");
+      return;
+    }
+
+    setSubmittingRating(true);
+    setRatingError("");
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Not authenticated");
+
+      const response = await fetch("http://localhost:3000/api/ratings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          orderId: order!._id,
+          restaurantId: order!.restaurantId,
+          orderRating,
+          orderReview: orderReview || "",
+          restaurantRating,
+          restaurantReview: restaurantReview || "",
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Failed to submit rating");
+      }
+
+      const data = await response.json();
+      setExistingRating(data.rating || null);
+      setRatingSubmitted(true);
+    } catch (err: any) {
+      setRatingError(err.message || "Failed to submit rating");
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
+
   // Fetch data on mount
   useEffect(() => {
     if (!authLoading && user && orderId) {
       fetchOrder();
       fetchDelivery();
+      fetchExistingRating();
       setLoading(false);
     }
   }, [authLoading, user, orderId]);
@@ -237,6 +304,155 @@ export default function OrderPage() {
                 <span className="text-orange-600">₹{finalTotal.toFixed(2)}</span>
               </div>
             </div>
+
+            {/* Rating Section */}
+            {order.deliveryStatus === "completed" && !ratingSubmitted && !existingRating && (
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-6">Rate Your Experience</h3>
+
+                {ratingError && (
+                  <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
+                    <p className="text-sm text-red-700">{ratingError}</p>
+                  </div>
+                )}
+
+                {/* Delivery Experience */}
+                <div className="mb-6 pb-6 border-b border-gray-200">
+                  <p className="font-semibold text-gray-900 mb-3">How was your delivery?</p>
+                  <div className="flex gap-2 mb-3">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => setOrderRating(star)}
+                        disabled={submittingRating}
+                        className="transition disabled:opacity-50"
+                      >
+                        <Star
+                          size={32}
+                          className={`${
+                            star <= orderRating
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "text-gray-300 hover:text-yellow-300"
+                          } transition`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    value={orderReview}
+                    onChange={(e) => setOrderReview(e.target.value)}
+                    placeholder="Tell us about your delivery experience (optional)"
+                    maxLength={500}
+                    disabled={submittingRating}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:bg-gray-100 text-gray-900 placeholder-gray-500"
+                    rows={2}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">{orderReview.length}/500</p>
+                </div>
+
+                {/* Restaurant Experience */}
+                <div className="mb-6">
+                  <p className="font-semibold text-gray-900 mb-3">How was the food & service?</p>
+                  <div className="flex gap-2 mb-3">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => setRestaurantRating(star)}
+                        disabled={submittingRating}
+                        className="transition disabled:opacity-50"
+                      >
+                        <Star
+                          size={32}
+                          className={`${
+                            star <= restaurantRating
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "text-gray-300 hover:text-yellow-300"
+                          } transition`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    value={restaurantReview}
+                    onChange={(e) => setRestaurantReview(e.target.value)}
+                    placeholder="Tell us about the food and service (optional)"
+                    maxLength={500}
+                    disabled={submittingRating}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:bg-gray-100 text-gray-900 placeholder-gray-500"
+                    rows={2}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">{restaurantReview.length}/500</p>
+                </div>
+
+                <button
+                  onClick={handleSubmitRating}
+                  disabled={submittingRating || orderRating === 0 || restaurantRating === 0}
+                  className="w-full py-3 bg-orange-600 text-white font-bold rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition inline-flex items-center justify-center gap-2"
+                >
+                  {submittingRating ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    "Submit Rating"
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* Existing Rating Display */}
+            {(ratingSubmitted || existingRating) && existingRating && (
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Your Rating</h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="border border-gray-200 rounded-xl p-4">
+                    <p className="font-semibold text-gray-900 mb-2">Delivery</p>
+                    <div className="flex gap-1 mb-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={`delivery-${star}`}
+                          size={16}
+                          className={`${star <= existingRating.orderRating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                        />
+                      ))}
+                    </div>
+                    {existingRating.orderReview && (
+                      <p className="text-sm text-gray-700 leading-relaxed">{existingRating.orderReview}</p>
+                    )}
+                  </div>
+
+                  <div className="border border-gray-200 rounded-xl p-4">
+                    <p className="font-semibold text-gray-900 mb-2">Food & Service</p>
+                    <div className="flex gap-1 mb-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={`restaurant-${star}`}
+                          size={16}
+                          className={`${star <= existingRating.restaurantRating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                        />
+                      ))}
+                    </div>
+                    {existingRating.restaurantReview && (
+                      <p className="text-sm text-gray-700 leading-relaxed">{existingRating.restaurantReview}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Rating Success Message */}
+            {ratingSubmitted && !existingRating && (
+              <div className="bg-green-50 border border-green-200 rounded-2xl p-6">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                  <div>
+                    <h3 className="font-bold text-green-900">Thank you for rating!</h3>
+                    <p className="text-sm text-green-700">Your feedback helps us improve.</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right: Sidebar */}

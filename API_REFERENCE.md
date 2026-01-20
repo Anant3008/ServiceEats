@@ -5,6 +5,7 @@
 - [User Service](#user-service)
 - [Restaurant Service](#restaurant-service)
 - [Order Service](#order-service)
+- [Ratings](#ratings)
 - [Cart Service](#cart-service)
 - [Payment Service](#payment-service)
 - [Delivery Service](#delivery-service)
@@ -521,6 +522,148 @@ Authorization: Bearer <token>
 **Errors:**
 - `401` - Unauthorized
 - `404` - Order not found
+- `500` - Server error
+
+---
+
+## Ratings
+
+**Base URL:** `http://localhost:3000/api/ratings`
+
+**Notes:**
+- Ratings are split into two independent scores: `orderRating` (delivery experience) and `restaurantRating` (food & service).
+- An order can be rated only once and only after it is delivered.
+- Submitting a rating updates the restaurant's aggregate rating in restaurant-service.
+
+#### Submit Rating (Authenticated)
+```http
+POST /
+```
+
+**Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "orderId": "507f1f77bcf86cd799439015",
+  "restaurantId": "507f1f77bcf86cd799439013",
+  "orderRating": 5,
+  "orderReview": "Driver was quick",
+  "restaurantRating": 4,
+  "restaurantReview": "Great taste but slightly cold"
+}
+```
+
+**Response:** `201 Created`
+```json
+{
+  "message": "Rating submitted successfully",
+  "rating": {
+    "_id": "65adbe2c...",
+    "orderId": "507f1f77bcf86cd799439015",
+    "userId": "507f1f77bcf86cd799439011",
+    "restaurantId": "507f1f77bcf86cd799439013",
+    "orderRating": 5,
+    "orderReview": "Driver was quick",
+    "restaurantRating": 4,
+    "restaurantReview": "Great taste but slightly cold",
+    "createdAt": "2024-01-20T11:00:00Z"
+  }
+}
+```
+
+**Errors:**
+- `400` - Missing fields / invalid rating range / order not delivered / already rated
+- `401` - Unauthorized
+- `403` - Rating someone else's order
+- `404` - Order not found
+
+---
+
+#### Get Rating by Order ID
+```http
+GET /order/:orderId
+```
+
+**Response:** `200 OK`
+```json
+{
+  "_id": "65adbe2c...",
+  "orderId": "507f1f77bcf86cd799439015",
+  "userId": "507f1f77bcf86cd799439011",
+  "restaurantId": "507f1f77bcf86cd799439013",
+  "orderRating": 5,
+  "orderReview": "Driver was quick",
+  "restaurantRating": 4,
+  "restaurantReview": "Great taste but slightly cold",
+  "createdAt": "2024-01-20T11:00:00Z"
+}
+```
+
+**Errors:**
+- `404` - Rating not found for this order
+
+---
+
+#### Get Restaurant Ratings (last 10)
+```http
+GET /restaurant/:restaurantId
+```
+
+**Response:** `200 OK`
+```json
+{
+  "averageRating": 4.3,
+  "totalReviews": 10,
+  "reviews": [
+    {
+      "userId": "507f1f77bcf86cd799439011",
+      "rating": 5,
+      "review": "Excellent food",
+      "createdAt": "2024-01-20T11:00:00Z"
+    }
+  ]
+}
+```
+
+**Errors:**
+- `500` - Server error
+
+---
+
+#### Get My Ratings (last 50) (Authenticated)
+```http
+GET /user
+```
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response:** `200 OK`
+```json
+{
+  "totalRatings": 2,
+  "ratings": [
+    {
+      "_id": "65adbe2c...",
+      "orderId": "507f1f77bcf86cd799439015",
+      "restaurantId": "507f1f77bcf86cd799439013",
+      "orderRating": 5,
+      "restaurantRating": 4,
+      "createdAt": "2024-01-20T11:00:00Z"
+    }
+  ]
+}
+```
+
+**Errors:**
+- `401` - Unauthorized
 - `500` - Server error
 
 ---

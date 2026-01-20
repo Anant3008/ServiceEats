@@ -46,6 +46,8 @@ export default function RestaurantDetailsPage() {
   const [cart, setCart] = useState<Map<string, number>>(new Map());
   const [cartCount, setCartCount] = useState(0);
   const [updatingItem, setUpdatingItem] = useState<string | null>(null);
+  const [ratings, setRatings] = useState<any[]>([]);
+  const [ratingsLoading, setRatingsLoading] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -65,6 +67,26 @@ export default function RestaurantDetailsPage() {
       }
     }
     fetchRestaurant();
+  }, [id]);
+
+  // Fetch restaurant ratings
+  useEffect(() => {
+    if (!id) return;
+    async function fetchRatings() {
+      setRatingsLoading(true);
+      try {
+        const res = await fetch(`http://localhost:3000/api/ratings/restaurant/${id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setRatings(data.reviews || []);
+        }
+      } catch (err) {
+        console.log("Failed to fetch ratings");
+      } finally {
+        setRatingsLoading(false);
+      }
+    }
+    fetchRatings();
   }, [id]);
 
   // Fetch cart to populate quantities
@@ -364,6 +386,57 @@ export default function RestaurantDetailsPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Ratings Section */}
+        <div className="bg-white rounded-3xl border border-orange-100 shadow-lg p-6 sm:p-8">
+          <h2 className="text-2xl font-black text-gray-900 mb-6">Customer Reviews</h2>
+          
+          {ratingsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="inline-block animate-spin mb-3">
+                  <div className="w-8 h-8 border-4 border-orange-200 border-t-orange-600 rounded-full"></div>
+                </div>
+                <p className="text-gray-600 font-semibold">Loading reviews...</p>
+              </div>
+            </div>
+          ) : ratings.length > 0 ? (
+            <div className="space-y-4">
+              {ratings.map((rating, idx) => (
+                <div key={idx} className="border border-gray-200 rounded-xl p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          size={16}
+                          className={`${
+                            star <= rating.rating
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "text-gray-300"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {new Date(rating.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  {rating.review && (
+                    <p className="text-gray-700 text-sm leading-relaxed">{rating.review}</p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-2">By {rating.userId}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Star size={48} className="text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-600 font-semibold mb-2">No reviews yet</p>
+              <p className="text-sm text-gray-500">Be the first to rate this restaurant!</p>
+            </div>
+          )}
         </div>
       </main>
 

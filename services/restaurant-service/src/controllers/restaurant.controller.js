@@ -47,8 +47,44 @@ const getRestaurantById = async (req, res) => {
     }
 };
 
+// Update restaurant rating (called by order-service)
+const updateRestaurantRating = async (req, res) => {
+    try {
+        const { restaurantId } = req.params;
+        const { rating, totalRatings } = req.body;
+
+        // Validation
+        if (rating === undefined || totalRatings === undefined) {
+            return res.status(400).json({ message: 'rating and totalRatings are required' });
+        }
+
+        if (rating < 1 || rating > 5) {
+            return res.status(400).json({ message: 'rating must be between 1 and 5' });
+        }
+
+        const restaurant = await Restaurant.findByIdAndUpdate(
+            restaurantId,
+            { rating: rating },
+            { new: true }
+        );
+
+        if (!restaurant) {
+            return res.status(404).json({ message: 'Restaurant not found' });
+        }
+
+        res.status(200).json({
+            message: 'Restaurant rating updated successfully',
+            restaurant
+        });
+    } catch (error) {
+        console.error('Error updating restaurant rating:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 module.exports = {
     addRestaurant,
     getRestaurants,
     getRestaurantById,
+    updateRestaurantRating,
 };

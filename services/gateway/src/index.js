@@ -47,6 +47,11 @@ app.use('/api/notifications', createProxyMiddleware({
   changeOrigin: true
 }));
 
+app.use('/api/ratings', createProxyMiddleware({
+  target: 'http://order-service:4003/api/ratings',
+  changeOrigin: true
+}));
+
 app.use(express.json());
 
 app.get('/health', (req, res) => {
