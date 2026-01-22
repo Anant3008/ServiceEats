@@ -7,27 +7,28 @@ export async function GET(request) {
     console.log("Client IP:", ip); // Debug log
     
     // For localhost development, default to Pune
-    if (!ip || ip === "127.0.0.1" || ip === "::1" || ip.startsWith("192.168.")) {
-      console.log("Localhost detected, using Pune as default");
-      return Response.json({
-        city: "Pune",
-        region: "Maharashtra",
-        country: "India",
-      });
-    }
+    // if (!ip || ip === "127.0.0.1" || ip === "::1" || ip.startsWith("192.168.")) {
+    //   console.log("Localhost detected, using Pune as default");
+    //   return Response.json({
+    //     city: "Pune",
+    //     region: "Maharashtra",
+    //     country: "India",
+    //   });
+    // }
 
-    const res = await fetch("https://ipapi.co/json/");
+    // Use geojs.io (free, unlimited, no API key)
+    const res = await fetch("https://get.geojs.io/v1/ip/geo.json");
     const data = await res.json();
-
+    
     console.log("Geo API response:", data); // Debug log
-
+    
     return Response.json({
       city: data.city || "Pune",
       region: data.region || "Maharashtra",
-      country: data.country_name || "India",
+      country: data.country || "India",
     });
   } catch (error) {
-    console.error("Geo API error:", error);
+    console.error("Geo API failed:", error);
     // Fallback to Pune
     return Response.json({
       city: "Pune",

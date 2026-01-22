@@ -20,12 +20,12 @@ async function getWeather(city) {
   return res.json();
 }
 
-async function getTrendingMessageFromAI(city, temperature, condition) {
+async function getTrendingMessageFromAI(city, temperature, condition, timezone) {
   try {
     const res = await fetch('http://localhost:3001/api/trending-message', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ city, temperature, condition }),
+      body: JSON.stringify({ city, temperature, condition, timezone }),
       cache: 'no-store'
     });
     const data = await res.json();
@@ -56,7 +56,8 @@ export default async function HomePage() {
 
   const temp = weather?.main?.temp || 25;
   const condition = weather?.weather?.[0]?.main || "Clear";
-  const message = await getTrendingMessageFromAI(city, temp, condition);
+  const timezone = weather?.timezone || 19800; // IST offset in seconds
+  const message = await getTrendingMessageFromAI(city, temp, condition, timezone);
 
   // 2. Render New Design
   return (
