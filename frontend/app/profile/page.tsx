@@ -9,6 +9,10 @@ import {
   Star, X, Save, Loader2, Menu 
 } from 'lucide-react';
 
+// Import Components
+import OrdersListView from '@/components/orders/OrdersListView';
+import OrderDetailsView from '@/components/orders/OrderDetailsView';
+
 // --- TYPES ---
 interface Address {
   _id: string;
@@ -132,10 +136,11 @@ export default function ProfilePage() {
   const router = useRouter();
   const { user, token, logout, isHydrating } = useAuth();
   
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTabState] = useState('profile');
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   
   // Modal & Form States
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -147,6 +152,24 @@ export default function ProfilePage() {
   // Notifications
   const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
 
+  // Helper function to set active tab with localStorage
+  const setActiveTab = (tab: string) => {
+    setActiveTabState(tab);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('activeProfileTab', tab);
+    }
+  };
+
+  // Load active tab from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTab = localStorage.getItem('activeProfileTab');
+      if (savedTab) {
+        setActiveTabState(savedTab);
+      }
+    }
+  }, []);
+
   // --- INITIAL DATA FETCH ---
   useEffect(() => {
     if (isHydrating) return;
@@ -155,7 +178,7 @@ export default function ProfilePage() {
       return;
     }
     fetchProfile();
-  }, [token, isHydrating]);
+  }, [token, isHydrating, router]);
 
   const fetchProfile = async () => {
     try {
@@ -264,7 +287,7 @@ export default function ProfilePage() {
       {/* Sidebar Navigation */}
       <Sidebar 
         activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
+        setActiveTab={(t: string) => { setActiveTab(t); setSelectedOrderId(null); }}
         onLogout={logout} 
         mobileOpen={mobileMenuOpen} 
         setMobileOpen={setMobileMenuOpen} 
@@ -363,12 +386,20 @@ export default function ProfilePage() {
               </div>
 
             </div>
+          ) : activeTab === 'orders' ? (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {selectedOrderId ? (
+                <OrderDetailsView orderId={selectedOrderId} onBack={() => setSelectedOrderId(null)} token={token!} />
+              ) : (
+                <OrdersListView userId={profile.userId} onSelectOrder={setSelectedOrderId} token={token!} />
+              )}
+            </div>
           ) : (
             // Placeholder for other tabs
             <div className="h-[60vh] flex flex-col items-center justify-center text-slate-400 bg-white rounded-[2rem] border-2 border-dashed border-slate-100">
-                <Package size={48} className="mb-4 text-slate-300 opacity-50" />
-                <h3 className="text-xl font-bold text-slate-800 mb-2">Coming Soon</h3>
-                <p className="text-sm">This section is currently under construction.</p>
+                <Heart size={48} className="mb-4 text-slate-300 opacity-50" />
+                <h3 className="text-xl font-bold text-slate-800 mb-2">No Favorites</h3>
+                <p className="text-sm">Save your favorite restaurants here.</p>
             </div>
           )}
         </div>
