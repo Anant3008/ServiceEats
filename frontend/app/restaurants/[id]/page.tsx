@@ -3,444 +3,371 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Clock, MapPin, Star, ShoppingCart, Plus, Minus } from "lucide-react";
+import { 
+  ArrowLeft, Clock, MapPin, Star, ShoppingCart, 
+  Plus, Minus, Search, Utensils, Zap, Info, ChevronRight, Share2, Heart
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import StickyCartFooter from "@/components/StickyCartFooter";
 
+// --- TYPES ---
 type MenuItem = {
-  _id?: string;
+  _id: string;
   name: string;
   price: number;
+  description?: string;
   isAvailable?: boolean;
+  image?: string; // Assuming menu items might have images later
+  isVeg?: boolean;
 };
 
 type Restaurant = {
   _id: string;
-  name?: string;
-  cuisine?: string;
-  rating?: number;
-  deliveryTime?: string;
+  name: string;
+  cuisine: string;
+  rating: number;
+  deliveryTime: string;
   image?: string;
   imageUrl?: string;
-  address?: string;
-  location?: string;
-  costForTwo?: string;
-  description?: string;
-  menu?: MenuItem[];
+  location: string;
+  costForTwo: string;
+  description: string;
+  menu: MenuItem[];
 };
 
-interface CartItem {
-  menuItemId: string;
-  quantity: number;
-}
+// --- SUB-COMPONENTS ---
+
+/**
+ * 1. Menu Item Card
+ * Clean, horizontal card with "Add" button logic
+ */
+const MenuCard = ({ 
+  item, 
+  quantity, 
+  onAdd, 
+  onUpdate, 
+  isAdding, 
+  isUpdating 
+}: { 
+  item: MenuItem; 
+  quantity: number; 
+  onAdd: () => void; 
+  onUpdate: (qty: number) => void;
+  isAdding: boolean;
+  isUpdating: boolean;
+}) => (
+  <div className={`group bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex justify-between gap-4 ${!item.isAvailable ? 'opacity-60 grayscale' : ''}`}>
+    
+    {/* Text Content */}
+    <div className="flex-1">
+      <div className="mb-2">
+         {/* Veg/Non-Veg Indicator (Mock) */}
+         <div className={`w-4 h-4 border flex items-center justify-center rounded-[4px] ${item.isVeg !== false ? 'border-green-600' : 'border-red-600'}`}>
+            <div className={`w-2 h-2 rounded-full ${item.isVeg !== false ? 'bg-green-600' : 'bg-red-600'}`}></div>
+         </div>
+      </div>
+      <h3 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">{item.name}</h3>
+      <p className="font-bold text-slate-900 mb-2">₹{item.price.toFixed(0)}</p>
+      {item.description && <p className="text-slate-500 text-sm leading-relaxed line-clamp-2">{item.description}</p>}
+      {!item.isAvailable && <p className="text-xs text-red-500 font-bold mt-2">Currently Unavailable</p>}
+    </div>
+
+    {/* Image & Action Area */}
+    <div className="flex flex-col items-center gap-2 relative">
+       {/* Placeholder Image (If no real image) */}
+       <div className="w-28 h-24 bg-slate-100 rounded-xl overflow-hidden relative">
+          {item.image ? (
+             <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+          ) : (
+             <div className="w-full h-full flex items-center justify-center text-slate-300">
+                <Utensils size={24} />
+             </div>
+          )}
+          
+          {/* Floating Action Button */}
+          <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 shadow-lg rounded-lg overflow-hidden w-24 h-9 bg-white border border-slate-200 flex items-center justify-center">
+             {quantity === 0 ? (
+                <button 
+                  onClick={onAdd}
+                  disabled={!item.isAvailable || isAdding}
+                  className="w-full h-full text-orange-600 font-extrabold text-sm hover:bg-orange-50 uppercase transition-colors"
+                >
+                  {isAdding ? "..." : "ADD"}
+                </button>
+             ) : (
+                <div className="flex items-center justify-between w-full px-1">
+                   <button onClick={() => onUpdate(quantity - 1)} disabled={isUpdating} className="p-1 text-slate-400 hover:text-orange-600"><Minus size={14}/></button>
+                   <span className="font-bold text-orange-600 text-sm">{quantity}</span>
+                   <button onClick={() => onUpdate(quantity + 1)} disabled={isUpdating} className="p-1 text-green-600 hover:text-green-700"><Plus size={14}/></button>
+                </div>
+             )}
+          </div>
+       </div>
+       {item.isAvailable && <p className="text-[10px] text-slate-400 mt-3">Customizable</p>}
+    </div>
+  </div>
+);
+
+// --- MAIN PAGE ---
 
 export default function RestaurantDetailsPage() {
   const params = useParams();
-  const id = typeof params?.id === "string" ? params.id : Array.isArray(params?.id) ? params.id[0] : "";
+  const id = typeof params?.id === "string" ? params.id : "";
+  const { user } = useAuth();
 
+  // State
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [adding, setAdding] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
   const [cart, setCart] = useState<Map<string, number>>(new Map());
   const [cartCount, setCartCount] = useState(0);
-  const [updatingItem, setUpdatingItem] = useState<string | null>(null);
-  const [ratings, setRatings] = useState<any[]>([]);
-  const [ratingsLoading, setRatingsLoading] = useState(false);
-  const { user } = useAuth();
+  
+  // Loading States for Actions
+  const [addingId, setAddingId] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [searchMenu, setSearchMenu] = useState("");
 
+  // 1. Fetch Restaurant
   useEffect(() => {
     if (!id) return;
-    async function fetchRestaurant() {
+    async function fetchData() {
       try {
         const res = await fetch(`http://localhost:3000/api/restaurants/${id}`);
-        if (!res.ok) {
-          throw new Error(`Failed to load restaurant (${res.status})`);
-        }
+        if (!res.ok) throw new Error("Restaurant not found");
         const data = await res.json();
         setRestaurant(data);
       } catch (err: any) {
-        setError(err.message || "Unable to load restaurant");
+        setError(err.message);
       } finally {
         setLoading(false);
       }
     }
-    fetchRestaurant();
+    fetchData();
   }, [id]);
 
-  // Fetch restaurant ratings
-  useEffect(() => {
-    if (!id) return;
-    async function fetchRatings() {
-      setRatingsLoading(true);
-      try {
-        const res = await fetch(`http://localhost:3000/api/ratings/restaurant/${id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setRatings(data.reviews || []);
-        }
-      } catch (err) {
-        console.log("Failed to fetch ratings");
-      } finally {
-        setRatingsLoading(false);
-      }
-    }
-    fetchRatings();
-  }, [id]);
-
-  // Fetch cart to populate quantities
+  // 2. Fetch Cart (Sync)
   useEffect(() => {
     if (!user) return;
     async function fetchCart() {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:3000/api/cart", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await fetch("http://localhost:3000/api/cart", { headers: { Authorization: `Bearer ${token}` } });
         if (res.ok) {
           const data = await res.json();
-          if (data.items && Array.isArray(data.items)) {
-            const cartMap = new Map<string, number>();
-            let total = 0;
-            data.items.forEach((item: any) => {
-              cartMap.set(item.menuItemId, item.quantity);
-              total += item.quantity;
-            });
-            setCart(cartMap);
-            setCartCount(total);
-          }
+          const map = new Map<string, number>();
+          let total = 0;
+          data.items.forEach((i: any) => {
+             map.set(i.menuItemId, i.quantity);
+             total += i.quantity;
+          });
+          setCart(map);
+          setCartCount(total);
         }
-      } catch (err) {
-        console.log("Failed to fetch cart");
-      }
+      } catch (e) {}
     }
     fetchCart();
   }, [user]);
 
+  // Handlers
   const handleAddToCart = async (item: MenuItem) => {
-    if (!user) {
-      setMessage("Please login to add items to cart.");
-      return;
-    }
-
-    const key = item._id || item.name;
-    setAdding(key);
-    setMessage(null);
-
+    if (!user) { alert("Please login first"); return; }
+    setAddingId(item._id);
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/cart/add", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          restaurantId: restaurant!._id,
-          restaurantName: restaurant!.name,
-          menuItemId: item._id,
-          name: item.name,
-          price: item.price,
-          quantity: 1,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || "Failed to add to cart");
-      }
-
-      // Update cart state
-      const newQty = (cart.get(key) || 0) + 1;
-      const newCart = new Map(cart);
-      newCart.set(key, newQty);
-      setCart(newCart);
-      setCartCount(cartCount + 1);
-      setMessage("Added to cart!");
-    } catch (e: any) {
-      setMessage(e.message || "Unable to add item");
-    } finally {
-      setAdding(null);
-    }
+       const token = localStorage.getItem("token");
+       await fetch("http://localhost:3000/api/cart/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+             restaurantId: restaurant!._id, restaurantName: restaurant!.name,
+             menuItemId: item._id, name: item.name, price: item.price, quantity: 1
+          })
+       });
+       setCart(new Map(cart.set(item._id, (cart.get(item._id) || 0) + 1)));
+       setCartCount(c => c + 1);
+    } catch (e) { alert("Failed to add"); } 
+    finally { setAddingId(null); }
   };
 
-  const handleUpdateQuantity = async (item: MenuItem, newQuantity: number) => {
-    const key = item._id || item.name;
-    setUpdatingItem(key);
-
+  const handleUpdateQuantity = async (item: MenuItem, newQty: number) => {
+    setUpdatingId(item._id);
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/cart/update", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          menuItemId: item._id,
-          quantity: newQuantity,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to update cart");
-      }
-
-      // Update cart state
-      const newCart = new Map(cart);
-      const oldQty = newCart.get(key) || 0;
-      const difference = newQuantity - oldQty;
-
-      if (newQuantity === 0) {
-        newCart.delete(key);
-      } else {
-        newCart.set(key, newQuantity);
-      }
-
-      setCart(newCart);
-      setCartCount(cartCount + difference);
-    } catch (e: any) {
-      setMessage(e.message || "Unable to update cart");
-    } finally {
-      setUpdatingItem(null);
-    }
+       const token = localStorage.getItem("token");
+       await fetch("http://localhost:3000/api/cart/update", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ menuItemId: item._id, quantity: newQty })
+       });
+       const newCart = new Map(cart);
+       const oldQty = newCart.get(item._id) || 0;
+       if (newQty === 0) newCart.delete(item._id);
+       else newCart.set(item._id, newQty);
+       
+       setCart(newCart);
+       setCartCount(c => c + (newQty - oldQty));
+    } catch (e) { alert("Failed to update"); }
+    finally { setUpdatingId(null); }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-orange-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin mb-4">
-            <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full"></div>
-          </div>
-          <p className="text-orange-600 text-lg font-bold">Loading restaurant...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return (
+     <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full"></div>
+     </div>
+  );
 
-  if (error || !restaurant) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-orange-50 flex items-center justify-center px-6">
-        <div className="max-w-md bg-white rounded-2xl border border-orange-100 shadow-lg p-8 text-center">
-          <p className="text-xl font-bold text-gray-900 mb-2">Restaurant not found</p>
-          <p className="text-gray-600 mb-6">{error || "We couldn't load this restaurant. Please try again."}</p>
-          <Link href="/restaurants" className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-full font-semibold hover:bg-orange-700 transition">
-            <ArrowLeft size={16} /> Back to restaurants
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  if (error || !restaurant) return (
+     <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-6 text-center">
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">Restaurant Not Found</h2>
+        <Link href="/restaurants" className="text-orange-600 font-bold hover:underline">Back to Restaurants</Link>
+     </div>
+  );
+
+  // Filter menu
+  const filteredMenu = restaurant.menu?.filter(item => 
+     item.name.toLowerCase().includes(searchMenu.toLowerCase())
+  ) || [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-orange-50 text-gray-900 pb-28">
-      {/* Top Bar */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-orange-100">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/restaurants" className="flex items-center gap-2 text-gray-600 hover:text-orange-600">
-              <ArrowLeft size={18} />
-              <span className="font-semibold">Back</span>
-            </Link>
+    <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 pb-32">
+       
+       {/* 1. Navbar */}
+       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200">
+          <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+             <Link href="/restaurants" className="flex items-center gap-2 text-slate-500 hover:text-orange-600 font-bold transition">
+                <ArrowLeft size={20} /> <span className="hidden sm:inline">Restaurants</span>
+             </Link>
+             <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500"><Search size={16}/></div>
+                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500"><Share2 size={16}/></div>
+                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500"><Heart size={16}/></div>
+             </div>
           </div>
-          <div className="text-xl font-black text-gray-900">Service<span className="text-orange-600">Eats</span></div>
-        </div>
-      </header>
+       </nav>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-8">
-        {/* Hero */}
-        <div className="bg-white rounded-3xl border border-orange-100 shadow-lg overflow-hidden">
-          <div className="relative h-64 sm:h-80 bg-gray-100">
-            <img
-              src={restaurant.imageUrl || restaurant.image || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1600&q=80"}
-              alt={restaurant.name}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4 sm:left-6 sm:right-6 flex flex-col gap-2 text-white drop-shadow-lg">
-              <div className="inline-flex items-center gap-2 bg-black/40 backdrop-blur px-3 py-1 rounded-full w-fit text-sm font-semibold">
-                <Star size={14} className="text-yellow-300" fill="currentColor" />
-                {restaurant.rating || "4.5"}
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-black leading-tight">{restaurant.name || "Restaurant"}</h1>
-              <p className="text-sm sm:text-base text-gray-100">{restaurant.cuisine || "Cuisine"}</p>
-            </div>
-          </div>
-
-          <div className="p-6 sm:p-8 grid gap-6 sm:gap-8 md:grid-cols-3">
-            <div className="space-y-3 md:col-span-2">
-              <div className="flex flex-wrap items-center gap-3 text-sm text-gray-700">
-                <div className="flex items-center gap-2 bg-orange-50 text-orange-700 px-3 py-2 rounded-lg border border-orange-100 font-semibold">
-                  <Clock size={14} /> {restaurant.deliveryTime || "30 mins"}
-                </div>
-                {restaurant.location && (
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <MapPin size={14} className="text-orange-500" /> {restaurant.location}
-                  </div>
-                )}
-                {restaurant.costForTwo && (
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <span className="font-semibold">{restaurant.costForTwo}</span>
-                  </div>
-                )}
-              </div>
-
-              {restaurant.description && (
-                <p className="text-gray-600 leading-relaxed">{restaurant.description}</p>
-              )}
-
-              {restaurant.menu && restaurant.menu.length > 0 ? (
-                <div className="bg-white border border-gray-200 rounded-2xl p-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">Menu</h2>
-                  <div className="space-y-3">
-                    {restaurant.menu.map((item, idx) => {
-                      const itemKey = item._id || String(idx);
-                      const quantity = cart.get(itemKey) || 0;
-
-                      return (
-                        <div
-                          key={itemKey}
-                          className={`flex items-center justify-between gap-4 p-4 rounded-lg border ${
-                            item.isAvailable ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-100 opacity-60'
-                          }`}
-                        >
-                          <div className="min-w-0">
-                            <p className="font-semibold text-gray-900 truncate">{item.name}</p>
-                            {!item.isAvailable && <p className="text-xs text-gray-500 mt-1">Not available</p>}
-                          </div>
-                          <div className="flex items-center gap-3 flex-shrink-0">
-                            <p className="font-bold text-orange-600 whitespace-nowrap">₹{item.price.toFixed(2)}</p>
-                            
-                            {quantity === 0 ? (
-                              // Add to Cart Button
-                              <button
-                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-orange-600 rounded-full hover:bg-orange-700 transition disabled:opacity-50"
-                                disabled={!item.isAvailable || !user || adding === itemKey}
-                                onClick={() => handleAddToCart(item)}
-                              >
-                                {adding === itemKey ? (
-                                  <span className="animate-pulse">Adding...</span>
-                                ) : (
-                                  <>
-                                    <ShoppingCart size={14} />
-                                    <span>Add</span>
-                                  </>
-                                )}
-                              </button>
-                            ) : (
-                              // Quantity Control
-                              <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-full px-2 py-1">
-                                <button
-                                  onClick={() => handleUpdateQuantity(item, quantity - 1)}
-                                  disabled={updatingItem === itemKey}
-                                  className="p-1 hover:bg-orange-100 rounded-full transition disabled:opacity-50"
-                                >
-                                  <Minus size={16} className="text-orange-600" />
-                                </button>
-                                <span className="font-bold text-orange-600 min-w-[2rem] text-center">{quantity}</span>
-                                <button
-                                  onClick={() => handleUpdateQuantity(item, quantity + 1)}
-                                  disabled={updatingItem === itemKey}
-                                  className="p-1 hover:bg-orange-100 rounded-full transition disabled:opacity-50"
-                                >
-                                  <Plus size={16} className="text-orange-600" />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {message && (
-                    <div
-                      className="mt-4 p-3 rounded-lg border text-sm"
-                      style={{
-                        background: message.includes("Added") ? "#ECFDF5" : "#FEF2F2",
-                        borderColor: message.includes("Added") ? "#10B981" : "#FCA5A5",
-                        color: message.includes("Added") ? "#065F46" : "#7F1D1D",
-                      }}
-                    >
-                      {message}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4">
-                  <p className="text-gray-700 font-semibold mb-1">Menu</p>
-                  <p className="text-sm text-gray-500">No menu items available yet.</p>
-                </div>
-              )}
-            </div>
-
-            <div className="bg-orange-50 border border-orange-100 rounded-2xl p-6 self-start">
-              <p className="text-sm font-semibold text-orange-700 mb-3">Quick Info</p>
-              <div className="space-y-3 text-sm text-gray-700">
-                <div className="flex justify-between"><span>Rating</span><span className="font-semibold">{restaurant.rating || "4.5"}</span></div>
-                <div className="flex justify-between"><span>Delivery</span><span className="font-semibold">{restaurant.deliveryTime || "30 mins"}</span></div>
-                <div className="flex justify-between"><span>Cost for two</span><span className="font-semibold">{restaurant.costForTwo || "—"}</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Ratings Section */}
-        <div className="bg-white rounded-3xl border border-orange-100 shadow-lg p-6 sm:p-8">
-          <h2 className="text-2xl font-black text-gray-900 mb-6">Customer Reviews</h2>
+       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
           
-          {ratingsLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-center">
-                <div className="inline-block animate-spin mb-3">
-                  <div className="w-8 h-8 border-4 border-orange-200 border-t-orange-600 rounded-full"></div>
+          {/* 2. Hero Section (Immersive) */}
+          <div className="relative h-64 sm:h-80 rounded-[2rem] overflow-hidden shadow-2xl mb-10 group">
+             {/* Background Image */}
+             <div className="absolute inset-0">
+                <img src={restaurant.imageUrl || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1600&q=80"} alt="Cover" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-[2s]" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
+             </div>
+             
+             {/* Content */}
+             <div className="absolute bottom-0 left-0 w-full p-6 sm:p-10 text-white">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                   <div>
+                      <h1 className="text-4xl sm:text-5xl font-black mb-2 tracking-tight">{restaurant.name}</h1>
+                      <p className="text-slate-300 text-lg mb-4 font-medium">{restaurant.cuisine} • {restaurant.location}</p>
+                      
+                      <div className="flex items-center gap-4 text-sm font-bold">
+                         <div className="flex items-center gap-1 bg-green-600 text-white px-2 py-1 rounded-lg">
+                            <span className="text-base">{restaurant.rating || 4.5}</span> <Star size={12} fill="currentColor" />
+                         </div>
+                         <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3 py-1 rounded-lg">
+                            <Clock size={14} className="text-orange-400" /> {restaurant.deliveryTime || "35 min"}
+                         </div>
+                         <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3 py-1 rounded-lg">
+                            <span className="text-slate-200">₹</span> {restaurant.costForTwo || "₹400 for two"}
+                         </div>
+                      </div>
+                   </div>
+                   
+                   {/* Offer Box (Visual Only) */}
+                   <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl max-w-xs">
+                      <div className="flex items-center gap-2 mb-1 text-orange-400 font-black uppercase tracking-wider text-xs">
+                         <Zap size={14} fill="currentColor" /> Offers
+                      </div>
+                      <p className="font-bold text-white text-lg">50% OFF up to ₹100</p>
+                      <p className="text-slate-400 text-xs">Use code WELCOME50 | Orders above ₹159</p>
+                   </div>
                 </div>
-                <p className="text-gray-600 font-semibold">Loading reviews...</p>
-              </div>
-            </div>
-          ) : ratings.length > 0 ? (
-            <div className="space-y-4">
-              {ratings.map((rating, idx) => (
-                <div key={idx} className="border border-gray-200 rounded-xl p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          size={16}
-                          className={`${
-                            star <= rating.rating
-                              ? "fill-yellow-400 text-yellow-400"
-                              : "text-gray-300"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-xs text-gray-500">
-                      {new Date(rating.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  {rating.review && (
-                    <p className="text-gray-700 text-sm leading-relaxed">{rating.review}</p>
-                  )}
-                  <p className="text-xs text-gray-500 mt-2">By {rating.userId}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <Star size={48} className="text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600 font-semibold mb-2">No reviews yet</p>
-              <p className="text-sm text-gray-500">Be the first to rate this restaurant!</p>
-            </div>
-          )}
-        </div>
-      </main>
+             </div>
+          </div>
 
-      <StickyCartFooter cartCount={cartCount} />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+             
+             {/* 3. Left Column: Menu */}
+             <div className="lg:col-span-2">
+                
+                {/* Menu Header & Search */}
+                <div className="flex items-center justify-between mb-6">
+                   <h2 className="text-2xl font-black text-slate-900">Menu</h2>
+                   <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                      <input 
+                        type="text" 
+                        placeholder="Search dishes..." 
+                        value={searchMenu}
+                        onChange={(e) => setSearchMenu(e.target.value)}
+                        className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-full text-sm font-medium focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all"
+                      />
+                   </div>
+                </div>
+
+                {/* Categories / Items */}
+                <div className="space-y-4">
+                   {filteredMenu.length > 0 ? filteredMenu.map((item) => (
+                      <MenuCard 
+                         key={item._id} 
+                         item={item} 
+                         quantity={cart.get(item._id) || 0}
+                         onAdd={() => handleAddToCart(item)}
+                         onUpdate={(q) => handleUpdateQuantity(item, q)}
+                         isAdding={addingId === item._id}
+                         isUpdating={updatingId === item._id}
+                      />
+                   )) : (
+                      <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-200">
+                         <Utensils className="mx-auto text-slate-300 mb-2" size={32} />
+                         <p className="text-slate-500 font-medium">No items found matching "{searchMenu}"</p>
+                      </div>
+                   )}
+                </div>
+             </div>
+
+             {/* 4. Right Column: Info & Sticky Cart (Desktop) */}
+             <div className="space-y-6">
+                
+                {/* Restaurant Info Card */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm sticky top-24">
+                   <div className="flex items-center gap-2 mb-4">
+                      <Info size={18} className="text-orange-600" />
+                      <h3 className="font-bold text-slate-900">Restaurant Info</h3>
+                   </div>
+                   <div className="space-y-4 text-sm">
+                      <div className="flex items-start gap-3 pb-3 border-b border-slate-50">
+                         <MapPin className="text-slate-400 shrink-0 mt-0.5" size={16} />
+                         <p className="text-slate-600">{restaurant.location}</p>
+                      </div>
+                      <div className="flex items-start gap-3 pb-3 border-b border-slate-50">
+                         <Clock className="text-slate-400 shrink-0 mt-0.5" size={16} />
+                         <div>
+                            <p className="text-slate-900 font-bold">Open now</p>
+                            <p className="text-slate-500 text-xs">10:00 AM - 11:00 PM</p>
+                         </div>
+                      </div>
+                      <p className="text-slate-500 leading-relaxed text-xs">
+                         {restaurant.description || "Known for hygiene and great taste. Packaging is spill-proof."}
+                      </p>
+                   </div>
+                </div>
+
+                {/* Desktop Mini Cart Prompt */}
+                {cartCount > 0 && (
+                   <div className="hidden lg:block bg-slate-900 text-white p-6 rounded-2xl shadow-xl animate-in slide-in-from-bottom-4">
+                      <h3 className="font-bold text-lg mb-1">Cart</h3>
+                      <p className="text-slate-400 text-sm mb-4">{cartCount} Items selected</p>
+                      <Link href="/cart" className="w-full py-3 bg-orange-600 hover:bg-orange-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors">
+                         View Cart <ChevronRight size={16} />
+                      </Link>
+                   </div>
+                )}
+             </div>
+
+          </div>
+       </main>
+
     </div>
   );
 }
