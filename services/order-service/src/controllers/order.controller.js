@@ -3,13 +3,15 @@ const Cart = require('../models/cart.model');
 const axios=require('axios');
 const { produceEvent } = require('../kafka/producer');
 
+const GATEWAY_URL = process.env.GATEWAY_URL || 'http://gateway-service:3000';
+
 const createOrder = async (req, res) => {
     try {
         const { restaurantId, items } = req.body;
         const userId = req.userId; // Get from auth middleware
 
         // ✅ FIXED: Use gateway instead of direct service call
-        const restaurantRes = await axios.get(`http://gateway:3000/api/restaurants/${restaurantId}`);
+        const restaurantRes = await axios.get(`${GATEWAY_URL}/api/restaurants/${restaurantId}`);
         const restaurant = restaurantRes.data;
 
         if (!restaurant) {

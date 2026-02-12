@@ -6,6 +6,8 @@ import Navbar from "@/components/Navbar";
 import { useParams, useRouter } from "next/navigation";
 import { CheckCircle, Clock, Truck, Home, Loader2, AlertCircle, Star } from "lucide-react";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
 interface OrderItem {
   name: string;
   quantity: number;
@@ -70,7 +72,7 @@ export default function OrderPage() {
     if (!orderId) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:3000/api/orders/${orderId}`, {
+      const res = await fetch(`${API_BASE}/api/orders/${orderId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -92,7 +94,7 @@ export default function OrderPage() {
     if (!orderId) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:3000/api/deliveries/${orderId}`, {
+      const res = await fetch(`${API_BASE}/api/deliveries/${orderId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -111,7 +113,7 @@ export default function OrderPage() {
   const fetchExistingRating = async () => {
     if (!orderId) return;
     try {
-      const res = await fetch(`http://localhost:3000/api/ratings/order/${orderId}`);
+      const res = await fetch(`${API_BASE}/api/ratings/order/${orderId}`);
       if (res.ok) {
         const data = await res.json();
         setExistingRating(data);
@@ -135,7 +137,7 @@ export default function OrderPage() {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Not authenticated");
 
-      const response = await fetch("http://localhost:3000/api/ratings", {
+      const response = await fetch(`${API_BASE}/api/ratings`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

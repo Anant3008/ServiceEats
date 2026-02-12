@@ -43,7 +43,7 @@ export function useOrders(userId: string | null, token: string | null, page = 1,
       try {
         setLoading(true);
         setError(null);
-        const data: any = await fetchUserOrders(userId, token, page, limit);
+        const data: any = await fetchUserOrders(userId as string, token as string, page, limit);
         
         if (!cancelled) {
           // Handle both array response (old) and object response (new)

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Loader2, ChevronLeft, Truck, Receipt, Star, CheckCircle2 } from 'lucide-react';
 import { Order, Delivery } from '@/types';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
 interface OrderDetailsProps {
   orderId: string;
   onBack: () => void;
@@ -23,18 +25,18 @@ export default function OrderDetailsView({ orderId, onBack, token }: OrderDetail
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch(`http://localhost:3000/api/orders/${orderId}`, { headers: { Authorization: `Bearer ${token}` } });
+        const res = await fetch(`${API_BASE}/api/orders/${orderId}`, { headers: { Authorization: `Bearer ${token}` } });
         if (res.ok) setOrder(await res.json());
         
         // Fetch Delivery
         try {
-           const dRes = await fetch(`http://localhost:3000/api/deliveries/${orderId}`, { headers: { Authorization: `Bearer ${token}` } });
+           const dRes = await fetch(`${API_BASE}/api/deliveries/${orderId}`, { headers: { Authorization: `Bearer ${token}` } });
            if (dRes.ok) setDelivery(await dRes.json());
         } catch(e) {}
 
         // Check if already rated
         try {
-           const rateRes = await fetch(`http://localhost:3000/api/ratings/order/${orderId}`, { headers: { Authorization: `Bearer ${token}` } });
+           const rateRes = await fetch(`${API_BASE}/api/ratings/order/${orderId}`, { headers: { Authorization: `Bearer ${token}` } });
            if (rateRes.status === 200) { 
              setIsSubmitted(true); 
            }
@@ -66,7 +68,7 @@ export default function OrderDetailsView({ orderId, onBack, token }: OrderDetail
         restaurantReview: reviews.restaurant
       };
 
-      const res = await fetch('http://localhost:3000/api/ratings', {
+      const res = await fetch(`${API_BASE}/api/ratings`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,

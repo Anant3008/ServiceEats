@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Loader2, Package, Utensils, ChevronRight, ShoppingCart } from 'lucide-react';
 import { Order } from '@/types';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
 interface OrdersListProps {
   userId: string;
   onSelectOrder: (id: string) => void;
@@ -17,7 +19,7 @@ export default function OrdersListView({ userId, onSelectOrder, token }: OrdersL
   useEffect(() => {
     const fetchOrders = async () => {
        try {
-          const res = await fetch(`http://localhost:3000/api/orders/user/${userId}?page=${page}&limit=10`, {
+          const res = await fetch(`${API_BASE}/api/orders/user/${userId}?page=${page}&limit=10`, {
              headers: { Authorization: `Bearer ${token}` }
           });
           const data = await res.json();

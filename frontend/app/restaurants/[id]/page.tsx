@@ -10,6 +10,8 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import StickyCartFooter from "@/components/StickyCartFooter";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
 // --- TYPES ---
 type MenuItem = {
   _id: string;
@@ -132,7 +134,7 @@ export default function RestaurantDetailsPage() {
     if (!id) return;
     async function fetchData() {
       try {
-        const res = await fetch(`http://localhost:3000/api/restaurants/${id}`);
+      const res = await fetch(`${API_BASE}/api/restaurants/${id}`);
         if (!res.ok) throw new Error("Restaurant not found");
         const data = await res.json();
         setRestaurant(data);
@@ -151,7 +153,7 @@ export default function RestaurantDetailsPage() {
     async function fetchCart() {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:3000/api/cart", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_BASE}/api/cart`, { headers: { Authorization: `Bearer ${token}` } });
         if (res.ok) {
           const data = await res.json();
           const map = new Map<string, number>();
@@ -174,7 +176,7 @@ export default function RestaurantDetailsPage() {
     setAddingId(item._id);
     try {
        const token = localStorage.getItem("token");
-       await fetch("http://localhost:3000/api/cart/add", {
+      await fetch(`${API_BASE}/api/cart/add`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({
@@ -192,7 +194,7 @@ export default function RestaurantDetailsPage() {
     setUpdatingId(item._id);
     try {
        const token = localStorage.getItem("token");
-       await fetch("http://localhost:3000/api/cart/update", {
+      await fetch(`${API_BASE}/api/cart/update`, {
           method: "PUT",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ menuItemId: item._id, quantity: newQty })

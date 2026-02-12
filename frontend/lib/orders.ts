@@ -2,8 +2,9 @@
  * Fetch user orders from the API
  */
 export async function fetchUserOrders(userId: string, token: string, page = 1, limit = 10) {
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
   const res = await fetch(
-    `http://localhost:3000/api/orders/user/${userId}?page=${page}&limit=${limit}`,
+    `${API_BASE}/api/orders/user/${userId}?page=${page}&limit=${limit}`,
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -27,11 +28,12 @@ export async function reorderItems(
   restaurantName: string,
   items: Array<{ menuItemId?: string; name: string; price: number; quantity: number }>
 ) {
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
   const results = [];
 
   for (const item of items) {
     try {
-      const res = await fetch("http://localhost:3000/api/cart/add", {
+      const res = await fetch(`${API_BASE}/api/cart/add`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

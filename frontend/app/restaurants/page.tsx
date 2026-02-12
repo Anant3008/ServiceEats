@@ -7,6 +7,8 @@ import {
   MapPin, Filter, Zap, ChevronDown, SlidersHorizontal 
 } from 'lucide-react';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
 // --- TYPES ---
 interface Restaurant {
   _id: string;
@@ -167,7 +169,7 @@ export default function RestaurantsPage() {
   useEffect(() => {
     async function fetchRestaurants() {
       try {
-        const res = await fetch('http://localhost:3000/api/restaurants');
+        const res = await fetch(`${API_BASE}/api/restaurants`);
         const data = await res.json();
         setRestaurants(Array.isArray(data) ? data : []);
       } catch (error) {

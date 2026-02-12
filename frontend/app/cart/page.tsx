@@ -19,6 +19,8 @@ import { createPayment } from "@/utils/paymentApi";
 // Initialize Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY || "");
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
 // --- TYPES ---
 interface CartItem {
   menuItemId: string;
@@ -90,7 +92,7 @@ function CartContent() {
   const fetchCart = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/cart", {
+      const res = await fetch(`${API_BASE}/api/cart`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -115,7 +117,7 @@ function CartContent() {
   const fetchAddresses = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/profile", {
+      const res = await fetch(`${API_BASE}/api/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch addresses");
@@ -147,7 +149,7 @@ function CartContent() {
   const updateQuantity = async (itemId: string, qty: number) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/cart/update", {
+      const res = await fetch(`${API_BASE}/api/cart/update`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ menuItemId: itemId, quantity: qty }),
@@ -159,7 +161,7 @@ function CartContent() {
   const removeItem = async (itemId: string) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/cart/remove", {
+      const res = await fetch(`${API_BASE}/api/cart/remove`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ menuItemId: itemId }),
@@ -479,7 +481,10 @@ function CartContent() {
 
 // Custom Hook Helper
 function useRequireAuth() {
-  const { user, loading } = useAuth();
+  const auth = useAuth();
+  const user = auth.user;
+  // If your AuthContext uses a different property for loading, update here:
+  const loading = "loading" in auth ? (auth as any).loading : false;
   const router = useRouter();
   useEffect(() => {
     if (!loading && !user) router.push("/auth/login");

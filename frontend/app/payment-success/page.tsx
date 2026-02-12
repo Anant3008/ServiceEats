@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { CheckCircle, Package, Clock, CreditCard, Sparkles } from "lucide-react";
 
-export default function PaymentSuccessPage() {
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
+function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const orderId = searchParams.get("orderId");
@@ -34,7 +36,7 @@ export default function PaymentSuccessPage() {
 
       while (attempts < maxAttempts) {
         try {
-          const res = await fetch(`http://localhost:3000/api/orders/${orderId}`, {
+          const res = await fetch(`${API_BASE}/api/orders/${orderId}`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -166,5 +168,29 @@ export default function PaymentSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function PaymentSuccessLoading() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-blue-50">
+      <Navbar />
+      <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
+        <div className="text-center">
+          <div className="animate-spin mb-4">
+            <CheckCircle className="w-16 h-16 text-green-500" />
+          </div>
+          <p className="text-gray-600">Loading your payment confirmation...</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={<PaymentSuccessLoading />}>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }

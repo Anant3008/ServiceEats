@@ -5,30 +5,62 @@ import { getTrendingMessage } from "@/utils/getTrendingMessage";
 import { User } from "lucide-react";
 import Image from "next/image";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
+
 async function getLocation() {
-  const res = await fetch(`http://localhost:3001/api/geo`, {
+  const res = await fetch(`${SITE_URL}/api/geo`, {
     cache: "no-store",
   });
   return res.json();
 }
 
-async function getWeather(city) {
+interface WeatherMain {
+  temp: number;
+}
+
+interface WeatherCondition {
+  main: string;
+}
+
+interface WeatherResponse {
+  main: WeatherMain;
+  weather: WeatherCondition[];
+  timezone: number;
+}
+
+async function getWeather(city: string): Promise<WeatherResponse> {
   const res = await fetch(
-    `http://localhost:3001/api/weather?city=${city}`,
+    `${SITE_URL}/api/weather?city=${city}`,
     { cache: "no-store" }
   );
   return res.json();
 }
 
-async function getTrendingMessageFromAI(city, temperature, condition, timezone) {
+interface TrendingMessageRequest {
+  city: string;
+  temperature: number;
+  condition: string;
+  timezone: number;
+}
+
+interface TrendingMessageResponse {
+  message: string;
+}
+
+async function getTrendingMessageFromAI(
+  city: string,
+  temperature: number,
+  condition: string,
+  timezone: number
+): Promise<string> {
   try {
-    const res = await fetch('http://localhost:3001/api/trending-message', {
+    const res = await fetch(`${SITE_URL}/api/trending-message`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ city, temperature, condition, timezone }),
+      body: JSON.stringify({ city, temperature, condition, timezone } as TrendingMessageRequest),
       cache: 'no-store'
     });
-    const data = await res.json();
+    const data: TrendingMessageResponse = await res.json();
     return data.message;
   } catch (error) {
     console.error("Failed to get AI message:", error);

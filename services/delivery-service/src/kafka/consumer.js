@@ -4,7 +4,7 @@ const {produceEvent} = require('./producer');
 
 const kafka = new Kafka({
     clientId: 'delivery-service',
-    brokers: [process.env.KAFKA_BROKER || 'localhost:9092'],
+    brokers: [process.env.KAFKA_BROKER || 'kafka:9092'],
 });
 
 const consumer = kafka.consumer({groupId: 'delivery-group'});

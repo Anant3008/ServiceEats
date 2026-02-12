@@ -13,6 +13,8 @@ import {
 import OrdersListView from '@/components/orders/OrdersListView';
 import OrderDetailsView from '@/components/orders/OrderDetailsView';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
 // --- TYPES ---
 interface Address {
   _id: string;
@@ -100,7 +102,7 @@ const Sidebar = ({ activeTab, setActiveTab, onLogout, mobileOpen, setMobileOpen 
 // 3. Address Card Component
 const AddressCard = ({ address, onEdit, onDelete }: { address: Address; onEdit: (a: Address) => void; onDelete: (id: string) => void }) => {
   const icons = { Home, Work: Briefcase, Other: MapPin } as const;
-  const Icon = icons[address.label] || MapPin;
+  const Icon = (icons as Record<string, typeof MapPin>)[address.label] || MapPin;
   
   const getTheme = (label: string) => {
     if (label === 'Home') return { bg: 'bg-blue-50', text: 'text-blue-600', border: 'hover:border-blue-200' };
@@ -183,7 +185,7 @@ export default function ProfilePage() {
   const fetchProfile = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch('http://localhost:3000/api/profile', {
+      const res = await fetch(`${API_BASE}/api/profile`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed to fetch profile');
@@ -206,7 +208,7 @@ export default function ProfilePage() {
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:3000/api/profile', {
+      const res = await fetch(`${API_BASE}/api/profile`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm)
@@ -224,8 +226,8 @@ export default function ProfilePage() {
   const handleAddressSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const url = isEditingAddress 
-      ? `http://localhost:3000/api/profile/address/${addressForm.id}`
-      : 'http://localhost:3000/api/profile/address';
+      ? `${API_BASE}/api/profile/address/${addressForm.id}`
+      : `${API_BASE}/api/profile/address`;
     
     try {
       const res = await fetch(url, {
@@ -246,7 +248,7 @@ export default function ProfilePage() {
   const handleDeleteAddress = async (id: string) => {
     if (!confirm('Are you sure?')) return;
     try {
-      const res = await fetch(`http://localhost:3000/api/profile/address/${id}`, {
+      const res = await fetch(`${API_BASE}/api/profile/address/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

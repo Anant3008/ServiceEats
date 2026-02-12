@@ -3,7 +3,7 @@ const Notification = require("../models/notification.model");
 
 const kafka = new Kafka({
     clientId: "notification-service",
-    brokers: [process.env.KAFKA_BROKER || "localhost:9092"],
+    brokers: [process.env.KAFKA_BROKER || "kafka:9092"],
 });
 
 const consumer = kafka.consumer({ groupId: "notification-group" });

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { X, Star, Loader2 } from "lucide-react";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
 interface RatingModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -40,7 +42,7 @@ export default function RatingModal({
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Not authenticated");
 
-      const response = await fetch("http://localhost:3000/api/ratings", {
+      const response = await fetch(`${API_BASE}/api/ratings`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
