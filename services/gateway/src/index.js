@@ -3,6 +3,7 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 const cors = require('cors');
 require('dotenv').config();
 const { notFound, errorHandler } = require('./middleware/errorHandler');
+const { authLimiter, apiLimiter, strictLimiter } = require('./middleware/rateLimiting');
 
 const app = express();
 
@@ -15,48 +16,73 @@ const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'http://payment-s
 const DELIVERY_SERVICE_URL = process.env.DELIVERY_SERVICE_URL || 'http://delivery-service:4004';
 const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:4006';
 
-app.use('/api/auth', createProxyMiddleware({
+// =====================================================
+// AUTH ENDPOINTS - Strict rate limiting (prevent brute force)
+// =====================================================
+app.use('/api/auth', authLimiter, createProxyMiddleware({
   target: `${USER_SERVICE_URL}/api/auth`,
   changeOrigin: true
 }));
 
-app.use('/api/profile', createProxyMiddleware({
+// =====================================================
+// PROFILE ENDPOINTS - Moderate rate limiting
+// =====================================================
+app.use('/api/profile', apiLimiter, createProxyMiddleware({
   target: `${USER_SERVICE_URL}/api/profile`,
   changeOrigin: true
 }));
 
-app.use('/api/restaurants', createProxyMiddleware({
+// =====================================================
+// READ-HEAVY ENDPOINTS - Moderate rate limiting
+// =====================================================
+app.use('/api/restaurants', apiLimiter, createProxyMiddleware({
   target: `${RESTAURANT_SERVICE_URL}/api/restaurants`,
   changeOrigin: true
 }));
 
-app.use('/api/orders', createProxyMiddleware({
+// =====================================================
+// WRITE-HEAVY ENDPOINTS - Strict rate limiting
+// =====================================================
+// Orders are resource-intensive (Kafka events, DB writes)
+app.use('/api/orders', strictLimiter, createProxyMiddleware({
   target: `${ORDER_SERVICE_URL}/api/orders`,
   changeOrigin: true
 }));
 
-app.use('/api/cart', createProxyMiddleware({
+// Cart operations trigger database writes
+app.use('/api/cart', strictLimiter, createProxyMiddleware({
   target: `${ORDER_SERVICE_URL}/api/cart`,
   changeOrigin: true
 }));
 
-app.use('/api/payments', createProxyMiddleware({
+// Ratings are write operations
+app.use('/api/ratings', strictLimiter, createProxyMiddleware({
+  target: `${ORDER_SERVICE_URL}/api/ratings`,
+  changeOrigin: true
+}));
+
+// =====================================================
+// PAYMENT ENDPOINTS - Strictest rate limiting
+// =====================================================
+// Payments are critically expensive (Stripe charges, Kafka events)
+app.use('/api/payments', strictLimiter, createProxyMiddleware({
   target: `${PAYMENT_SERVICE_URL}/api/payments`,
   changeOrigin: true
 }));
 
-app.use('/api/deliveries', createProxyMiddleware({
+// =====================================================
+// DELIVERY ENDPOINTS - Moderate rate limiting
+// =====================================================
+app.use('/api/deliveries', apiLimiter, createProxyMiddleware({
   target: `${DELIVERY_SERVICE_URL}/api/deliveries`,
   changeOrigin: true
 }));
 
-app.use('/api/notifications', createProxyMiddleware({
+// =====================================================
+// NOTIFICATION ENDPOINTS - Moderate rate limiting
+// =====================================================
+app.use('/api/notifications', apiLimiter, createProxyMiddleware({
   target: `${NOTIFICATION_SERVICE_URL}/api/notifications`,
-  changeOrigin: true
-}));
-
-app.use('/api/ratings', createProxyMiddleware({
-  target: `${ORDER_SERVICE_URL}/api/ratings`,
   changeOrigin: true
 }));
 
