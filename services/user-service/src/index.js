@@ -1,6 +1,7 @@
 const express=require('express');
 require('dotenv').config();
 const connectDB=require('./config/db');
+const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app=express();
 
@@ -8,6 +9,9 @@ app.use(express.json());
 
 app.use('/api/auth',require('./routes/authRoutes'));
 app.use('/api/profile',require('./routes/profileRoutes'));
+
+app.use(notFound);
+app.use(errorHandler);
 
 const startServer = async () => {
   try {

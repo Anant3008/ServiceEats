@@ -5,12 +5,16 @@ const orderRoutes=require('./routes/orderRoutes');
 const cartRoutes=require('./routes/cartRoutes');
 const ratingRoutes=require('./routes/ratingRoutes');
 const {startConsumer} = require('./kafka/consumer')
+const { notFound, errorHandler } = require('./middleware/errorHandler');
 const app=express();
 
 app.use(express.json());
 app.use('/api/orders', orderRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/ratings', ratingRoutes);
+
+app.use(notFound);
+app.use(errorHandler);
 
 
 const startServer = async () => {

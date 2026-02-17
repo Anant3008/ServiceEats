@@ -2,6 +2,7 @@ const express = require('express');
 require('dotenv').config();
 const connectDB = require('./config/db');
 const { startConsumer } = require('./kafka/consumer');
+const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
@@ -19,6 +20,9 @@ app.use('/api/payments', require('./routes/paymentRoutes'));
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'Payment service is running' });
 });
+
+app.use(notFound);
+app.use(errorHandler);
 
 const startServer = async () => {
     try {

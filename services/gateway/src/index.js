@@ -2,6 +2,7 @@ const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const cors = require('cors');
 require('dotenv').config();
+const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
@@ -64,6 +65,9 @@ app.use(express.json());
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'Gateway is running' });
 });
+
+app.use(notFound);
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

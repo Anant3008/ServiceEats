@@ -2,12 +2,16 @@ const express=require('express');
 require('dotenv').config();
 const connectDB=require('./config/db');
 const {startConsumer}=require('./kafka/consumer');
+const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app=express();
 
 app.use(express.json());
 
 app.use('/api/deliveries', require('./routes/deliveryRoutes'));
+
+app.use(notFound);
+app.use(errorHandler);
 
 
 const startServer = async () => {
