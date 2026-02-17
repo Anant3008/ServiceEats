@@ -1,543 +1,402 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRequireAuth } from "@/hooks/useRequireAuth";
-import Navbar from "@/components/Navbar";
 import { useParams, useRouter } from "next/navigation";
-import { CheckCircle, Clock, Truck, Home, Loader2, AlertCircle, Star } from "lucide-react";
+import { 
+  CheckCircle2, Clock, Truck, MapPin, Loader2, Star, 
+  ChevronLeft, Receipt, Phone, MessageSquare, ShoppingBag, 
+  Utensils, ChefHat, Bike
+} from "lucide-react";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
+// --- CONFIG ---
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
-interface OrderItem {
-  name: string;
-  quantity: number;
-  price: number;
-}
-
+// --- TYPES ---
+interface OrderItem { name: string; quantity: number; price: number; }
 interface Order {
-  _id: string;
-  userId: string;
-  restaurantId: string;
-  items: OrderItem[];
-  totalAmount: number;
-  paymentStatus: "pending" | "paid" | "failed";
-  deliveryStatus: "pending" | "completed" | "cancelled";
-  createdAt: string;
+  _id: string; restaurantId: string; items: OrderItem[];
+  totalAmount: number; paymentStatus: "pending" | "paid" | "failed";
+  deliveryStatus: "pending" | "completed" | "cancelled"; createdAt: string;
 }
-
 interface Delivery {
-  _id: string;
-  orderId: string;
-  driverName: string;
-  status: "assigned" | "picked_up" | "on_the_way" | "delivered";
+  _id: string; driverName: string; status: "assigned" | "picked_up" | "on_the_way" | "delivered";
   location: { latitude: number; longitude: number };
-  createdAt: string;
 }
 
-const STATUS_COLORS = {
-  payment: {
-    pending: "bg-yellow-50 border-yellow-200 text-yellow-700",
-    paid: "bg-green-50 border-green-200 text-green-700",
-    failed: "bg-red-50 border-red-200 text-red-700",
-  },
-  delivery: {
-    pending: "bg-blue-50 border-blue-200 text-blue-700",
-    completed: "bg-green-50 border-green-200 text-green-700",
-    cancelled: "bg-red-50 border-red-200 text-red-700",
-  },
-};
-
-export default function OrderPage() {
+export default function OrderTrackingPage() {
   const { user, loading: authLoading } = useRequireAuth();
   const params = useParams();
   const router = useRouter();
   const orderId = typeof params?.id === "string" ? params.id : "";
 
+  // State
   const [order, setOrder] = useState<Order | null>(null);
   const [delivery, setDelivery] = useState<Delivery | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-  const [orderRating, setOrderRating] = useState(0);
-  const [restaurantRating, setRestaurantRating] = useState(0);
-  const [orderReview, setOrderReview] = useState("");
-  const [restaurantReview, setRestaurantReview] = useState("");
-  const [submittingRating, setSubmittingRating] = useState(false);
-  const [ratingError, setRatingError] = useState("");
-  const [ratingSubmitted, setRatingSubmitted] = useState(false);
-  const [existingRating, setExistingRating] = useState<any | null>(null);
+  
+  // Rating State
+  const [rating, setRating] = useState({ order: 0, restaurant: 0 });
+  const [reviews, setReviews] = useState({ order: "", restaurant: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRated, setIsRated] = useState(false);
 
-  // Fetch order details
-  const fetchOrder = async () => {
-    if (!orderId) return;
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE}/api/orders/${orderId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setOrder(data);
-      } else {
-        throw new Error("Failed to fetch order");
-      }
-    } catch (err: any) {
-      setError(err.message || "Failed to load order");
-    }
-  };
-
-  // Fetch delivery details
-  const fetchDelivery = async () => {
-    if (!orderId) return;
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE}/api/deliveries/${orderId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setDelivery(data);
-      }
-      // Delivery might not exist yet, so don't error on 404
-    } catch (err: any) {
-      console.log("Delivery not yet assigned");
-    }
-  };
-
-  const fetchExistingRating = async () => {
-    if (!orderId) return;
-    try {
-      const res = await fetch(`${API_BASE}/api/ratings/order/${orderId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setExistingRating(data);
-        setRatingSubmitted(true);
-      }
-    } catch (err) {
-      // Ignore if not rated yet
-    }
-  };
-
-  const handleSubmitRating = async () => {
-    if (orderRating === 0 || restaurantRating === 0) {
-      setRatingError("Please rate both delivery and restaurant");
-      return;
-    }
-
-    setSubmittingRating(true);
-    setRatingError("");
-
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("Not authenticated");
-
-      const response = await fetch(`${API_BASE}/api/ratings`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          orderId: order!._id,
-          restaurantId: order!.restaurantId,
-          orderRating,
-          orderReview: orderReview || "",
-          restaurantRating,
-          restaurantReview: restaurantReview || "",
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Failed to submit rating");
-      }
-
-      const data = await response.json();
-      setExistingRating(data.rating || null);
-      setRatingSubmitted(true);
-    } catch (err: any) {
-      setRatingError(err.message || "Failed to submit rating");
-    } finally {
-      setSubmittingRating(false);
-    }
-  };
-
-  // Fetch data on mount
+  // --- FETCHING ---
   useEffect(() => {
-    if (!authLoading && user && orderId) {
-      fetchOrder();
-      fetchDelivery();
-      fetchExistingRating();
-      setLoading(false);
-    }
+    if (authLoading || !user || !orderId) return;
+
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const orderRes = await fetch(`${API_BASE}/api/orders/${orderId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!orderRes.ok) throw new Error("Order not found");
+        setOrder(await orderRes.json());
+
+        try {
+          const delRes = await fetch(`${API_BASE}/api/deliveries/${orderId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (delRes.ok) setDelivery(await delRes.json());
+        } catch (e) {}
+
+        try {
+          const rateRes = await fetch(`${API_BASE}/api/ratings/order/${orderId}`);
+          if (rateRes.ok) setIsRated(true);
+        } catch (e) {}
+
+        setLoading(false);
+      } catch (err: any) {
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+    const interval = setInterval(fetchData, 5000); 
+    return () => clearInterval(interval);
   }, [authLoading, user, orderId]);
 
-  // Poll for updates every 3 seconds
-  useEffect(() => {
-    if (!orderId) return;
-    const interval = setInterval(() => {
-      fetchOrder();
-      fetchDelivery();
-      setLastUpdate(new Date());
-    }, 3000);
+  // --- HANDLERS ---
+  const handleSubmitRating = async () => {
+    if (!rating.order || !rating.restaurant) return;
+    setIsSubmitting(true);
+    try {
+      const token = localStorage.getItem("token");
+      await fetch(`${API_BASE}/api/ratings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          orderId, restaurantId: order!.restaurantId,
+          orderRating: rating.order, orderReview: reviews.order,
+          restaurantRating: rating.restaurant, restaurantReview: reviews.restaurant
+        }),
+      });
+      setIsRated(true);
+    } catch (e) { alert("Failed to submit"); } 
+    finally { setIsSubmitting(false); }
+  };
 
-    return () => clearInterval(interval);
-  }, [orderId]);
+  // --- HELPER: DETERMINE CURRENT STEP ---
+  const getProgressStep = () => {
+    if (!order) return 0;
+    if (order.deliveryStatus === 'completed') return 4; // Delivered
+    if (delivery?.status === 'on_the_way' || delivery?.status === 'picked_up') return 3; // On Way
+    if (delivery?.status === 'assigned') return 2; // Driver Assigned
+    return 1; // Preparing (Default if pending)
+  };
 
-  if (authLoading || loading) {
+  const currentStep = getProgressStep();
+
+  // --- COMPONENTS ---
+  const ProgressBar = () => {
+    const steps = [
+      { id: 1, label: 'Cooking', icon: ChefHat },
+      { id: 2, label: 'Driver', icon: Truck },
+      { id: 3, label: 'On Way', icon: Bike },
+      { id: 4, label: 'Delivered', icon: CheckCircle2 },
+    ];
+    
+    // Percentage for the progress line (0% to 100%)
+    const progressPercent = Math.max(0, Math.min(100, ((currentStep - 1) / 3) * 100));
+
     return (
-      <div className="min-h-screen bg-orange-50">
-        <Navbar />
-        <div className="flex items-center justify-center h-[80vh]">
-          <Loader2 className="w-8 h-8 text-orange-600 animate-spin" />
+      <div className="relative py-6 px-2">
+        {/* Gray Background Line */}
+        <div className="absolute left-4 right-4 top-1/2 -translate-y-1/2 h-1 bg-slate-100 -z-10 rounded-full"></div>
+        
+        {/* Active Orange Line */}
+        <div 
+           className="absolute left-4 top-1/2 -translate-y-1/2 h-1 bg-orange-500 -z-10 rounded-full transition-all duration-1000 ease-out"
+           style={{ width: `${progressPercent}%` }}
+        ></div>
+
+        <div className="flex justify-between relative">
+          {steps.map((step) => {
+            const isCompleted = step.id < currentStep;
+            const isCurrent = step.id === currentStep;
+            
+            return (
+              <div key={step.id} className="flex flex-col items-center gap-3">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 transition-all duration-500 z-10 bg-white ${
+                  isCompleted ? 'border-green-500 text-green-600' :
+                  isCurrent ? 'border-orange-500 text-orange-600 shadow-[0_0_0_4px_rgba(249,115,22,0.2)] scale-110' :
+                  'border-slate-100 text-slate-300'
+                }`}>
+                  {isCompleted ? <CheckCircle2 size={20} /> : <step.icon size={20} />}
+                </div>
+                <span className={`text-xs font-bold uppercase tracking-wider ${
+                  isCurrent ? 'text-orange-600' : isCompleted ? 'text-green-600' : 'text-slate-300'
+                }`}>
+                  {step.label}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
-  }
+  };
 
-  if (error || !order) {
-    return (
-      <div className="min-h-screen bg-orange-50">
-        <Navbar />
-        <div className="max-w-4xl mx-auto px-6 pt-24">
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
-            <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-red-900 mb-2">Order Not Found</h2>
-            <p className="text-red-700 mb-6">{error || "We couldn't find this order."}</p>
-            <button
-              onClick={() => router.push("/restaurants")}
-              className="px-6 py-2 bg-orange-600 text-white font-bold rounded-full hover:bg-orange-500"
-            >
-              Back to Restaurants
-            </button>
-          </div>
-        </div>
+  // --- UI RENDER ---
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center gap-4">
+      <Loader2 className="w-10 h-10 text-orange-600 animate-spin" />
+      <p className="text-slate-500 font-medium">Tracking your order...</p>
+    </div>
+  );
+
+  if (error || !order) return (
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-6 text-center">
+      <div className="bg-red-50 p-6 rounded-3xl mb-4">
+         <Receipt className="w-12 h-12 text-red-500" />
       </div>
-    );
-  }
+      <h2 className="text-2xl font-bold text-slate-900">Order Not Found</h2>
+      <button onClick={() => router.push('/restaurants')} className="mt-6 text-orange-600 font-bold hover:underline">
+        Go Home
+      </button>
+    </div>
+  );
 
-  const DELIVERY_FEE = 50;
-  const subtotal = order.totalAmount; // order.totalAmount is just the items total
-  const tax = Math.round(subtotal * 0.05); // 5% tax on subtotal
-  const finalTotal = subtotal + tax + DELIVERY_FEE; // Grand total with tax and delivery
+  const subtotal = order.totalAmount;
+  const tax = Math.round(subtotal * 0.05);
+  const deliveryFee = 50;
+  const total = subtotal + tax + deliveryFee;
+
+  // Determine Dynamic Hero Content based on Step
+  const getHeroContent = () => {
+    switch(currentStep) {
+      case 1: return { title: "Preparing your food", subtitle: "The restaurant is working on your order.", color: "bg-orange-500" };
+      case 2: return { title: "Driver Assigned", subtitle: `${delivery?.driverName || "A driver"} is heading to the restaurant.`, color: "bg-blue-600" };
+      case 3: return { title: "Order on the way", subtitle: "Your food is out for delivery!", color: "bg-purple-600" };
+      case 4: return { title: "Order Delivered", subtitle: "Enjoy your meal!", color: "bg-green-600" };
+      default: return { title: "Order Placed", subtitle: "Waiting for confirmation...", color: "bg-slate-800" };
+    }
+  };
+  
+  const hero = getHeroContent();
 
   return (
-    <div className="min-h-screen bg-orange-50">
-      <Navbar />
-      <div className="max-w-4xl mx-auto px-6 pt-24 pb-12">
-        {/* Success Banner */}
-        {order.paymentStatus === "paid" && (
-          <div className="mb-8 bg-green-50 border border-green-200 rounded-2xl p-6">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="w-6 h-6 text-green-600" />
-              <div>
-                <h2 className="font-bold text-green-900">Order Confirmed!</h2>
-                <p className="text-sm text-green-700">Order ID: {order._id}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left: Order Details */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Payment Status */}
-            <div className={`rounded-2xl p-6 border ${STATUS_COLORS.payment[order.paymentStatus]}`}>
-              <div className="flex items-center gap-3 mb-2">
-                <CheckCircle size={20} />
-                <h3 className="font-bold">Payment Status</h3>
-              </div>
-              <p className="text-sm capitalize">{order.paymentStatus === "paid" ? "✓ Payment Completed" : "Pending Payment"}</p>
-            </div>
-
-            {/* Delivery Status */}
-            <div className={`rounded-2xl p-6 border ${STATUS_COLORS.delivery[order.deliveryStatus]}`}>
-              <div className="flex items-center gap-3 mb-2">
-                <Truck size={20} />
-                <h3 className="font-bold">Delivery Status</h3>
-              </div>
-              <p className="text-sm capitalize">
-                {order.deliveryStatus === "pending"
-                  ? delivery
-                    ? `🚗 Driver ${delivery.driverName} assigned`
-                    : "Waiting to assign driver..."
-                  : "✓ Delivered"}
-              </p>
-            </div>
-
-            {/* Order Items */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Order Items</h3>
-              <div className="space-y-4">
-                {order.items.map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
-                    <div>
-                      <p className="font-semibold text-gray-900">{item.name}</p>
-                      <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
-                    </div>
-                    <p className="font-semibold text-gray-900">₹{(item.price * item.quantity).toFixed(2)}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Pricing Breakdown */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 space-y-3 text-sm">
-              <div className="flex justify-between text-gray-600">
-                <span>Subtotal</span>
-                <span>₹{subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-gray-600">
-                <span>Taxes & Charges (5%)</span>
-                <span>₹{tax}</span>
-              </div>
-              <div className="flex justify-between text-gray-600">
-                <span>Delivery Fee</span>
-                <span>₹{DELIVERY_FEE}</span>
-              </div>
-              <div className="border-t border-gray-200 pt-3 flex justify-between font-bold text-gray-900">
-                <span>Total Amount</span>
-                <span className="text-orange-600">₹{finalTotal.toFixed(2)}</span>
-              </div>
-            </div>
-
-            {/* Rating Section */}
-            {order.deliveryStatus === "completed" && !ratingSubmitted && !existingRating && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-6">Rate Your Experience</h3>
-
-                {ratingError && (
-                  <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
-                    <p className="text-sm text-red-700">{ratingError}</p>
-                  </div>
-                )}
-
-                {/* Delivery Experience */}
-                <div className="mb-6 pb-6 border-b border-gray-200">
-                  <p className="font-semibold text-gray-900 mb-3">How was your delivery?</p>
-                  <div className="flex gap-2 mb-3">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        onClick={() => setOrderRating(star)}
-                        disabled={submittingRating}
-                        className="transition disabled:opacity-50"
-                      >
-                        <Star
-                          size={32}
-                          className={`${
-                            star <= orderRating
-                              ? "fill-yellow-400 text-yellow-400"
-                              : "text-gray-300 hover:text-yellow-300"
-                          } transition`}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                  <textarea
-                    value={orderReview}
-                    onChange={(e) => setOrderReview(e.target.value)}
-                    placeholder="Tell us about your delivery experience (optional)"
-                    maxLength={500}
-                    disabled={submittingRating}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:bg-gray-100 text-gray-900 placeholder-gray-500"
-                    rows={2}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">{orderReview.length}/500</p>
-                </div>
-
-                {/* Restaurant Experience */}
-                <div className="mb-6">
-                  <p className="font-semibold text-gray-900 mb-3">How was the food & service?</p>
-                  <div className="flex gap-2 mb-3">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        onClick={() => setRestaurantRating(star)}
-                        disabled={submittingRating}
-                        className="transition disabled:opacity-50"
-                      >
-                        <Star
-                          size={32}
-                          className={`${
-                            star <= restaurantRating
-                              ? "fill-yellow-400 text-yellow-400"
-                              : "text-gray-300 hover:text-yellow-300"
-                          } transition`}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                  <textarea
-                    value={restaurantReview}
-                    onChange={(e) => setRestaurantReview(e.target.value)}
-                    placeholder="Tell us about the food and service (optional)"
-                    maxLength={500}
-                    disabled={submittingRating}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:bg-gray-100 text-gray-900 placeholder-gray-500"
-                    rows={2}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">{restaurantReview.length}/500</p>
-                </div>
-
-                <button
-                  onClick={handleSubmitRating}
-                  disabled={submittingRating || orderRating === 0 || restaurantRating === 0}
-                  className="w-full py-3 bg-orange-600 text-white font-bold rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition inline-flex items-center justify-center gap-2"
-                >
-                  {submittingRating ? (
-                    <>
-                      <Loader2 size={18} className="animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    "Submit Rating"
-                  )}
-                </button>
-              </div>
-            )}
-
-            {/* Existing Rating Display */}
-            {(ratingSubmitted || existingRating) && existingRating && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Your Rating</h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="border border-gray-200 rounded-xl p-4">
-                    <p className="font-semibold text-gray-900 mb-2">Delivery</p>
-                    <div className="flex gap-1 mb-2">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={`delivery-${star}`}
-                          size={16}
-                          className={`${star <= existingRating.orderRating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-                        />
-                      ))}
-                    </div>
-                    {existingRating.orderReview && (
-                      <p className="text-sm text-gray-700 leading-relaxed">{existingRating.orderReview}</p>
-                    )}
-                  </div>
-
-                  <div className="border border-gray-200 rounded-xl p-4">
-                    <p className="font-semibold text-gray-900 mb-2">Food & Service</p>
-                    <div className="flex gap-1 mb-2">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={`restaurant-${star}`}
-                          size={16}
-                          className={`${star <= existingRating.restaurantRating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-                        />
-                      ))}
-                    </div>
-                    {existingRating.restaurantReview && (
-                      <p className="text-sm text-gray-700 leading-relaxed">{existingRating.restaurantReview}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Rating Success Message */}
-            {ratingSubmitted && !existingRating && (
-              <div className="bg-green-50 border border-green-200 rounded-2xl p-6">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
-                  <div>
-                    <h3 className="font-bold text-green-900">Thank you for rating!</h3>
-                    <p className="text-sm text-green-700">Your feedback helps us improve.</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Right: Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Timeline / Status Steps */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h3 className="font-bold text-gray-900 mb-6">Order Progress</h3>
-              <div className="space-y-4">
-                {/* Step 1: Payment */}
-                <div className="flex gap-4">
-                  <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${order.paymentStatus === "paid" ? "bg-green-600" : "bg-gray-300"}`}>
-                    ✓
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">Payment</p>
-                    <p className="text-xs text-gray-500">Completed</p>
-                  </div>
-                </div>
-
-                {/* Connector Line */}
-                <div className="flex gap-4">
-                  <div className="w-10 flex justify-center">
-                    <div className={`w-1 h-6 ${order.deliveryStatus !== "pending" ? "bg-green-600" : "bg-gray-300"}`}></div>
-                  </div>
-                </div>
-
-                {/* Step 2: Delivery */}
-                <div className="flex gap-4">
-                  <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${order.deliveryStatus === "completed" ? "bg-green-600" : "bg-orange-600"}`}>
-                    {order.deliveryStatus === "completed" ? "✓" : "→"}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">Delivery</p>
-                    <p className="text-xs text-gray-500 capitalize">
-                      {order.deliveryStatus === "pending" ? (delivery ? `Driver: ${delivery.driverName}` : "Assigning...") : "Delivered"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Delivery Info */}
-            {delivery && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h3 className="font-bold text-gray-900 mb-4">Delivery Details</h3>
-                <div className="space-y-3 text-sm">
-                  <div>
-                    <p className="text-gray-500">Driver</p>
-                    <p className="font-semibold text-gray-900">{delivery.driverName}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Location</p>
-                    <p className="font-semibold text-gray-900">
-                      {delivery.location.latitude.toFixed(2)}°N, {delivery.location.longitude.toFixed(2)}°E
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Last Updated */}
-            <p className="text-xs text-gray-500 text-center">
-              Last updated: {lastUpdate.toLocaleTimeString()}
-            </p>
-
-            {/* CTA Buttons */}
-            <div className="space-y-2">
-              <button
-                onClick={() => router.push("/restaurants")}
-                className="w-full py-3 bg-orange-600 text-white font-bold rounded-full hover:bg-orange-500 transition"
-              >
-                Order Again
-              </button>
-              <button
-                onClick={() => router.push("/")}
-                className="w-full py-3 bg-gray-200 text-gray-900 font-bold rounded-full hover:bg-gray-300 transition"
-              >
-                Back to Home
-              </button>
-            </div>
+    <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 pb-20">
+      
+      {/* 1. Header (Minimal) */}
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+          <button 
+            onClick={() => router.push('/restaurants')} 
+            className="flex items-center gap-2 text-slate-500 hover:text-orange-600 transition font-bold"
+          >
+            <ChevronLeft size={20} /> Back
+          </button>
+          <div className="text-xs font-bold bg-slate-100 px-3 py-1 rounded-full text-slate-500">
+            #{order._id.slice(-6).toUpperCase()}
           </div>
         </div>
-      </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-4 py-8">
+        
+        {/* 2. DYNAMIC STATUS HERO */}
+        <div className={`${hero.color} text-white rounded-[2.5rem] p-8 md:p-12 mb-10 shadow-xl transition-colors duration-500 relative overflow-hidden`}>
+           <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div>
+                 <h1 className="text-3xl md:text-5xl font-black mb-2 tracking-tight">{hero.title}</h1>
+                 <p className="text-white/80 text-lg font-medium">{hero.subtitle}</p>
+              </div>
+              {/* Optional: Add a large icon here representing the state */}
+              <div className="hidden md:block opacity-20 transform scale-150">
+                {currentStep === 4 ? <CheckCircle2 size={100}/> : <Clock size={100}/>}
+              </div>
+           </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* --- LEFT COLUMN --- */}
+          <div className="lg:col-span-2 space-y-8">
+            
+            {/* 3. Improved Stepper */}
+            <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
+               <div className="flex justify-between items-center mb-6">
+                  <h3 className="font-bold text-xl text-slate-900">Timeline</h3>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Live Updates</span>
+               </div>
+               <ProgressBar />
+            </div>
+
+            {/* 4. Order Items */}
+            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+               <div className="p-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
+                  <h3 className="font-bold text-lg text-slate-900">Order Details</h3>
+                  <span className="text-xs font-bold bg-white border px-2 py-1 rounded text-slate-500">{order.items.length} Items</span>
+               </div>
+               <div className="p-6 space-y-4">
+                  {order.items.map((item, idx) => (
+                     <div key={idx} className="flex justify-between items-center group">
+                        <div className="flex items-center gap-4">
+                           <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-sm font-bold text-orange-600 border border-orange-100 group-hover:scale-110 transition-transform">
+                              {item.quantity}x
+                           </div>
+                           <div>
+                              <p className="font-bold text-slate-800 text-lg">{item.name}</p>
+                              <p className="text-xs text-slate-400">Standard Portion</p>
+                           </div>
+                        </div>
+                        <p className="font-bold text-slate-900">₹{(item.price * item.quantity).toFixed(0)}</p>
+                     </div>
+                  ))}
+               </div>
+            </div>
+
+            {/* 5. Rating Section */}
+            {currentStep === 4 && !isRated && (
+               <div className="bg-white rounded-[2rem] p-8 border border-orange-100 shadow-lg animate-in slide-in-from-bottom-4">
+                  <div className="text-center mb-8">
+                     <h3 className="text-2xl font-black text-slate-900 mb-2">How was your meal?</h3>
+                     <p className="text-slate-500">Your feedback helps us improve.</p>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-8">
+                     {/* Delivery Rating */}
+                     <div className="bg-slate-50 p-6 rounded-2xl">
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 text-center">Delivery Partner</p>
+                        <div className="flex justify-center gap-2 mb-4">
+                           {[1,2,3,4,5].map(s => (
+                              <button key={s} onClick={()=>setRating({...rating, order: s})} className="hover:scale-110 transition">
+                                 <Star size={32} className={s <= rating.order ? 'fill-yellow-400 text-yellow-400' : 'text-slate-300'} />
+                              </button>
+                           ))}
+                        </div>
+                        <textarea 
+                           className="w-full p-3 bg-white rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-orange-200 outline-none resize-none"
+                           placeholder="How was the delivery?"
+                           rows={3}
+                           value={reviews.order}
+                           onChange={(e) => setReviews({...reviews, order: e.target.value})}
+                        />
+                     </div>
+                     
+                     {/* Food Rating */}
+                     <div className="bg-slate-50 p-6 rounded-2xl">
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 text-center">Food Quality</p>
+                        <div className="flex justify-center gap-2 mb-4">
+                           {[1,2,3,4,5].map(s => (
+                              <button key={s} onClick={()=>setRating({...rating, restaurant: s})} className="hover:scale-110 transition">
+                                 <Star size={32} className={s <= rating.restaurant ? 'fill-yellow-400 text-yellow-400' : 'text-slate-300'} />
+                              </button>
+                           ))}
+                        </div>
+                        <textarea 
+                           className="w-full p-3 bg-white rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-orange-200 outline-none resize-none"
+                           placeholder="How was the food?"
+                           rows={3}
+                           value={reviews.restaurant}
+                           onChange={(e) => setReviews({...reviews, restaurant: e.target.value})}
+                        />
+                     </div>
+                  </div>
+
+                  <button 
+                     onClick={handleSubmitRating} 
+                     disabled={isSubmitting || !rating.order || !rating.restaurant}
+                     className="w-full mt-8 py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed shadow-xl"
+                  >
+                     {isSubmitting ? "Submitting..." : "Submit Feedback"}
+                  </button>
+               </div>
+            )}
+          </div>
+
+          {/* --- RIGHT COLUMN (SIDEBAR) --- */}
+          <div className="space-y-6">
+             
+             {/* Driver Card */}
+             {delivery && currentStep < 4 && (
+                <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-xl relative overflow-hidden">
+                   <div className="flex items-center gap-4 mb-6">
+                      <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center border-4 border-white shadow-sm overflow-hidden">
+                         {/* Placeholder Avatar */}
+                         <Truck size={28} className="text-slate-500" />
+                      </div>
+                      <div>
+                         <h3 className="font-bold text-xl text-slate-900">{delivery.driverName}</h3>
+                         <div className="flex items-center gap-1.5 text-orange-600 bg-orange-50 px-2 py-0.5 rounded text-xs font-bold w-fit mt-1">
+                            <span className="w-1.5 h-1.5 bg-orange-600 rounded-full animate-pulse"></span> {delivery.status.replace('_', ' ')}
+                         </div>
+                      </div>
+                   </div>
+
+                   <div className="flex gap-3">
+                      <button className="flex-1 py-3 bg-slate-900 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-black transition shadow-lg shadow-slate-200">
+                         <Phone size={18} /> Call
+                      </button>
+                      <button className="flex-1 py-3 bg-white border-2 border-slate-100 text-slate-700 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-slate-50 transition">
+                         <MessageSquare size={18} /> Chat
+                      </button>
+                   </div>
+                </div>
+             )}
+
+             {/* Bill Receipt */}
+             <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm relative overflow-hidden">
+                {/* Visual Top Edge */}
+                <div className="h-4 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,#f8fafc_10px,#f8fafc_20px)] border-b border-slate-100"></div>
+                
+                <div className="p-8">
+                   <div className="flex items-center gap-2 mb-6 opacity-50">
+                      <Receipt size={24} />
+                      <h3 className="font-bold text-lg uppercase tracking-widest">Receipt</h3>
+                   </div>
+
+                   <div className="space-y-4 text-sm text-slate-500 mb-8 font-medium">
+                      <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
+                      <div className="flex justify-between"><span>Taxes</span><span>₹{tax.toFixed(2)}</span></div>
+                      <div className="flex justify-between"><span>Delivery</span><span>₹{deliveryFee.toFixed(2)}</span></div>
+                   </div>
+
+                   <div className="border-t-2 border-dashed border-slate-200 pt-6 flex justify-between items-center">
+                      <span className="font-black text-slate-900 text-lg">TOTAL</span>
+                      <span className="font-black text-2xl text-orange-600">₹{total.toFixed(2)}</span>
+                   </div>
+                </div>
+                
+                {/* Visual Bottom Edge */}
+                <div className="h-4 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,#f8fafc_10px,#f8fafc_20px)] border-t border-slate-100"></div>
+             </div>
+
+             <div className="text-center">
+                <button onClick={() => router.push('/restaurants')} className="text-xs font-bold text-slate-400 hover:text-orange-600 transition uppercase tracking-widest">
+                   Report an Issue
+                </button>
+             </div>
+
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
