@@ -29,7 +29,7 @@ const authLimiter = rateLimit({
     console.log(`[rate-limit] Auth limit exceeded for IP: ${req.ip}`);
     res.status(429).json({
       error: 'Too many login attempts',
-      message: 'Please try again after 15 minutes',
+      message: 'Please try again after 5 minutes',
       retryAfter: req.rateLimit.resetTime,
     });
   },
