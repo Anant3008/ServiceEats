@@ -1,5 +1,29 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+const MESSAGE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const messageCache = new Map();
+
+const normalizeCondition = (condition = "") => {
+  const lower = condition.toLowerCase();
+  if (lower.includes("rain")) return "rain";
+  if (lower.includes("cloud")) return "cloud";
+  if (lower.includes("clear")) return "clear";
+  if (lower.includes("storm") || lower.includes("thunder")) return "storm";
+  return "other";
+};
+
+const getTimeOfDay = (timezoneOffsetSeconds) => {
+  const offset = Number.isFinite(timezoneOffsetSeconds) ? timezoneOffsetSeconds : 19800;
+  const utcTime = new Date();
+  const localTime = new Date(utcTime.getTime() + offset * 1000);
+  const localHour = localTime.getUTCHours();
+
+  if (localHour >= 5 && localHour < 12) return { timeOfDay: "morning", localHour };
+  if (localHour >= 12 && localHour < 17) return { timeOfDay: "afternoon", localHour };
+  if (localHour >= 17 && localHour < 21) return { timeOfDay: "evening", localHour };
+  return { timeOfDay: "night", localHour };
+};
+
 export async function POST(req) {
   try {
     const { city, temperature, condition, timezone } = await req.json();
@@ -11,26 +35,27 @@ export async function POST(req) {
       return Response.json({ message: fallbackMessage });
     }
 
+    const { timeOfDay, localHour } = getTimeOfDay(timezone);
+    const normalizedCity = (city || "unknown").trim().toLowerCase();
+    const weatherKey = normalizeCondition(condition);
+    const tempBucket = Number.isFinite(temperature) ? Math.round(temperature / 5) * 5 : "na";
+
+    const cacheKey = `${normalizedCity}:${timeOfDay}:${weatherKey}:${tempBucket}`;
+    const cached = messageCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return Response.json(
+        { message: cached.message },
+        {
+          headers: {
+            "Cache-Control": "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600",
+            "X-Cache": "HIT",
+          },
+        }
+      );
+    }
+
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
-
-    // Calculate local time using timezone offset (in seconds)
-    const timezoneOffset = timezone || 19800; // Default to IST (+5:30 = 19800 seconds)
-    const utcTime = new Date();
-    const localTime = new Date(utcTime.getTime() + timezoneOffset * 1000);
-    const localHour = localTime.getUTCHours();
-    
-    // Determine time of day
-    let timeOfDay = "afternoon";
-    if (localHour >= 5 && localHour < 12) {
-      timeOfDay = "morning";
-    } else if (localHour >= 12 && localHour < 17) {
-      timeOfDay = "afternoon";
-    } else if (localHour >= 17 && localHour < 21) {
-      timeOfDay = "evening";
-    } else {
-      timeOfDay = "night";
-    }
 
     const prompt = `You are a creative food delivery app copywriter in India.
 
@@ -61,12 +86,31 @@ Your output (only the message, no explanations):`;
 
     console.log("Generated AI message:", message);
 
-    return Response.json({ message });
+    messageCache.set(cacheKey, {
+      message,
+      expiresAt: Date.now() + MESSAGE_TTL_MS,
+    });
+
+    return Response.json(
+      { message },
+      {
+        headers: {
+          "Cache-Control": "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600",
+          "X-Cache": "MISS",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error generating trending message:", error);
     // Return fallback on error
-    return Response.json({ 
-      message: "Great food awaits 😋 – Check out top-rated restaurants near you!" 
-    });
+    return Response.json(
+      { message: "Great food awaits 😋 – Check out top-rated restaurants near you!" },
+      {
+        headers: {
+          "Cache-Control": "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600",
+          "X-Cache": "ERROR",
+        },
+      }
+    );
   }
 }
