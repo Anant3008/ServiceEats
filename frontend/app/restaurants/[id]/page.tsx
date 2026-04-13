@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import StickyCartFooter from "@/components/StickyCartFooter";
+import RestaurantDetailHeader from "@/components/RestaurantDetailHeader";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
@@ -231,19 +232,8 @@ export default function RestaurantDetailsPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 pb-32">
        
-       {/* 1. Navbar */}
-       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-             <Link href="/restaurants" className="flex items-center gap-2 text-slate-500 hover:text-orange-600 font-bold transition">
-                <ArrowLeft size={20} /> <span className="hidden sm:inline">Restaurants</span>
-             </Link>
-             <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500"><Search size={16}/></div>
-                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500"><Share2 size={16}/></div>
-                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500"><Heart size={16}/></div>
-             </div>
-          </div>
-       </nav>
+       {/* 1. Restaurant Detail Header */}
+       <RestaurantDetailHeader />
 
        <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
           

@@ -46,20 +46,70 @@ export default function OrderTrackingPage() {
   useEffect(() => {
     if (authLoading || !user || !orderId) return;
 
+      let cancelled = false;
+      let pollTimeout: ReturnType<typeof setTimeout> | null = null;
+
+      const clearPollTimeout = () => {
+         if (pollTimeout) {
+            clearTimeout(pollTimeout);
+            pollTimeout = null;
+         }
+      };
+
+      const isTerminal = (nextOrder: Order | null) => {
+         if (!nextOrder) return false;
+         return (
+            nextOrder.deliveryStatus === "completed" ||
+            nextOrder.deliveryStatus === "cancelled" ||
+            nextOrder.paymentStatus === "failed"
+         );
+      };
+
+      const getNextDelay = (nextOrder: Order | null, nextDelivery: Delivery | null) => {
+         if (typeof document !== "undefined" && document.hidden) {
+            return 15000;
+         }
+
+         if (isTerminal(nextOrder)) {
+            return null;
+         }
+
+         if (nextDelivery?.status === "on_the_way" || nextDelivery?.status === "picked_up") {
+            return 5000;
+         }
+
+         if (nextDelivery?.status === "assigned") {
+            return 7000;
+         }
+
+         return 10000;
+      };
+
     const fetchData = async () => {
+         let nextOrder: Order | null = null;
+         let nextDelivery: Delivery | null = null;
+
       try {
         const token = localStorage.getItem("token");
         const orderRes = await fetch(`${API_BASE}/api/orders/${orderId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (!orderRes.ok) throw new Error("Order not found");
-        setOrder(await orderRes.json());
+            nextOrder = await orderRes.json();
+            if (!cancelled) {
+               setOrder(nextOrder);
+            }
 
         try {
           const delRes = await fetch(`${API_BASE}/api/deliveries/${orderId}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
-          if (delRes.ok) setDelivery(await delRes.json());
+               if (delRes.ok) {
+                  nextDelivery = await delRes.json();
+                  if (!cancelled) {
+                     setDelivery(nextDelivery);
+                  }
+               }
         } catch (e) {}
 
         try {
@@ -67,16 +117,50 @@ export default function OrderTrackingPage() {
           if (rateRes.ok) setIsRated(true);
         } catch (e) {}
 
-        setLoading(false);
+            if (!cancelled) {
+               setLoading(false);
+            }
+
+            return { nextOrder, nextDelivery };
       } catch (err: any) {
-        setError(err.message);
-        setLoading(false);
+            if (!cancelled) {
+               setError(err.message);
+               setLoading(false);
+            }
+            return { nextOrder: null, nextDelivery: null };
       }
     };
 
-    fetchData();
-    const interval = setInterval(fetchData, 5000); 
-    return () => clearInterval(interval);
+      const poll = async () => {
+         if (cancelled) return;
+
+         const { nextOrder, nextDelivery } = await fetchData();
+         if (cancelled) return;
+
+         const nextDelay = getNextDelay(nextOrder, nextDelivery);
+         if (nextDelay == null) {
+            return;
+         }
+
+         pollTimeout = setTimeout(poll, nextDelay);
+      };
+
+      const onVisibilityChange = () => {
+         if (cancelled) return;
+         if (!document.hidden) {
+            clearPollTimeout();
+            poll();
+         }
+      };
+
+      poll();
+      document.addEventListener("visibilitychange", onVisibilityChange);
+
+      return () => {
+         cancelled = true;
+         clearPollTimeout();
+         document.removeEventListener("visibilitychange", onVisibilityChange);
+      };
   }, [authLoading, user, orderId]);
 
   // --- HANDLERS ---

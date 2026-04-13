@@ -16,6 +16,14 @@ const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'http://payment-s
 const DELIVERY_SERVICE_URL = process.env.DELIVERY_SERVICE_URL || 'http://delivery-service:4004';
 const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:4006';
 
+// Apply method-aware limits: reads can be frequent (polling), writes stay strict.
+const ordersRateLimiter = (req, res, next) => {
+  if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
+    return apiLimiter(req, res, next);
+  }
+  return strictLimiter(req, res, next);
+};
+
 // =====================================================
 // AUTH ENDPOINTS - Strict rate limiting (prevent brute force)
 // =====================================================
@@ -43,8 +51,8 @@ app.use('/api/restaurants', apiLimiter, createProxyMiddleware({
 // =====================================================
 // WRITE-HEAVY ENDPOINTS - Strict rate limiting
 // =====================================================
-// Orders are resource-intensive (Kafka events, DB writes)
-app.use('/api/orders', strictLimiter, createProxyMiddleware({
+// Orders use mixed traffic: GET endpoints are polled by clients, writes remain strict.
+app.use('/api/orders', ordersRateLimiter, createProxyMiddleware({
   target: `${ORDER_SERVICE_URL}/api/orders`,
   changeOrigin: true
 }));

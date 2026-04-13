@@ -6,6 +6,7 @@ import {
   Search, Star, Clock, ShoppingCart, User, 
   MapPin, Filter, Zap, ChevronDown, SlidersHorizontal 
 } from 'lucide-react';
+import Navbar from '@/components/Navbar';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
@@ -35,57 +36,8 @@ const FILTERS = [
   { id: "Indian", label: "Indian" },
 ];
 
+
 // --- SUB-COMPONENTS ---
-
-/** * 1. Navbar Component 
- * Handles Search input and User Navigation 
- */
-const Navbar = ({ 
-  searchTerm, 
-  setSearchTerm 
-}: { 
-  searchTerm: string, 
-  setSearchTerm: (s: string) => void 
-}) => (
-  <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex justify-between items-center gap-4">
-      
-      {/* Brand */}
-      <Link href="/" className="flex items-center gap-2 group shrink-0">
-        <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-orange-200 group-hover:scale-105 transition-transform">SE</div>
-        <span className="text-xl font-black tracking-tight text-slate-900 hidden md:block">
-          Service<span className="text-orange-600">Eats</span>
-        </span>
-      </Link>
-      
-      {/* Search Bar */}
-      <div className="flex-1 max-w-2xl mx-auto">
-        <div className="relative group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
-          <input
-            type="text"
-            placeholder="Search for restaurants, cuisines..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 bg-slate-100 border-transparent focus:bg-white border focus:border-orange-500/50 rounded-xl outline-none transition-all font-medium text-sm placeholder-slate-400 focus:ring-4 focus:ring-orange-500/10"
-          />
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center gap-3 shrink-0">
-         <Link href="/cart" className="p-2.5 text-slate-500 hover:bg-orange-50 hover:text-orange-600 rounded-xl transition-colors relative">
-            <ShoppingCart size={22} />
-            {/* Dot Indicator for cart items (Mock logic) */}
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-         </Link>
-         <Link href="/profile" className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors">
-            <User size={20} />
-         </Link>
-      </div>
-    </div>
-  </nav>
-);
 
 /**
  * 2. Restaurant Card Component
@@ -205,8 +157,21 @@ export default function RestaurantsPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900">
       
-      {/* Navbar */}
-      <Navbar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+      {/* Navbar with Search Bar */}
+      <Navbar 
+        searchBar={
+          <div className="relative w-full max-w-md mx-auto flex items-center">
+            <Search className="absolute left-3 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="Search restaurants..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all shadow-sm"
+            />
+          </div>
+        }
+      />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         

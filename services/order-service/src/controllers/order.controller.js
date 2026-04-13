@@ -41,11 +41,12 @@ const createOrder = async (req, res) => {
         // Save the order to the database
         await newOrder.save();
 
-        // Produce a Kafka event
+        // Produce a Kafka event (✅ Include restaurantName for notification)
         await produceEvent('order_created', {
             orderId: newOrder._id,
             userId,
             restaurantId,
+            restaurantName: restaurant.name,
             items: validatedItems,
             totalAmount,
             status: "created"

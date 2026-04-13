@@ -8,6 +8,7 @@ const kafka = new Kafka({
 });
 
 const consumer = kafka.consumer({groupId: 'delivery-group'});
+const GATEWAY_URL = process.env.GATEWAY_URL || 'http://gateway-service:3000';
 
 const startConsumer = async () => {
     await consumer.connect();
@@ -31,8 +32,10 @@ const startConsumer = async () => {
 
             console.log('Delivery assigned to driver:', assignedDriverName, 'for order:', data.orderId);
 
+            // ✅ Include userId in all events for notification service
             await produceEvent('delivery.assigned', {
                 orderId: delivery.orderId,
+                userId: data.userId,
                 driverName: delivery.driverName,
                 location: delivery.location,
                 status: delivery.status
@@ -42,8 +45,10 @@ const startConsumer = async () => {
                 delivery.status = 'delivered';
                 await delivery.save();
 
+                // ✅ Include userId in delivery.completed event
                 await produceEvent('delivery.completed', {
                     orderId: delivery.orderId,
+                    userId: data.userId,
                     driverName: delivery.driverName,
                     location: delivery.location,
                     status: delivery.status
