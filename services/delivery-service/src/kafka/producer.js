@@ -2,7 +2,9 @@ const { Kafka } = require("kafkajs");
 
 const kafka = new Kafka({
   clientId: "delivery-service",
-  brokers: [process.env.KAFKA_BROKER || "kafka:9092"],
+  brokers: (
+    process.env.KAFKA_BROKERS || "kafka-1:9092,kafka-2:9092,kafka-3:9092"
+  ).split(","),
 });
 
 const producer = kafka.producer();
