@@ -1,0 +1,16 @@
+# Dependencies
+**/node_modules
+
+# Build outputs
+frontend/.next
+frontend/out
+frontend/dist
+services/**/dist
+services/**/build
+
+# Logs and caches
+**/.cache
+**/*.log
+
+# Coverage
+**/coverage

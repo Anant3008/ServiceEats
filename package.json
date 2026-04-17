@@ -1,0 +1,39 @@
+{
+  "name": "serviceeats",
+  "version": "1.0.0",
+  "description": "ServiceEats is a microservices-based food delivery application that mirrors a production-style architecture. Each business capability runs in its own service, communicating over REST through an API gateway and asynchronously through Kafka.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "format": "prettier --write \"{frontend,services}/**/*.{js,jsx,ts,tsx,json,css,scss,md,yml,yaml}\"",
+    "format:check": "prettier --check \"{frontend,services}/**/*.{js,jsx,ts,tsx,json,css,scss,md,yml,yaml}\"",
+    "lint:frontend": "npm --prefix frontend run lint",
+    "build:frontend": "npm --prefix frontend run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Anant3008/ServiceEats.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Anant3008/ServiceEats/issues"
+  },
+  "homepage": "https://github.com/Anant3008/ServiceEats#readme",
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.3"
+  },
+  "lint-staged": {
+    "{frontend,services}/**/*.{js,jsx,ts,tsx,json,css,scss,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
+}
