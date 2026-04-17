@@ -21,6 +21,9 @@ const STATUS_COLORS = {
   },
 };
 
+const getErrorMessage = (err: unknown, fallback: string) =>
+  err instanceof Error ? err.message : fallback;
+
 export default function OrdersPage() {
   const { user, loading: authLoading } = useRequireAuth();
   const router = useRouter();
@@ -43,7 +46,7 @@ export default function OrdersPage() {
     10
   );
 
-  const handleReorder = async (order: any) => {
+  const handleReorder = async (order: (typeof orders)[number]) => {
     if (!user) return;
 
     setReordering(order._id);
@@ -64,8 +67,8 @@ export default function OrdersPage() {
       } else {
         router.push("/cart");
       }
-    } catch (err: any) {
-      alert(err.message || "Failed to reorder");
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, "Failed to reorder"));
     } finally {
       setReordering(null);
     }

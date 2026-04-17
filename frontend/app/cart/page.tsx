@@ -16,6 +16,9 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Elements, useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 import { createPayment } from "@/utils/paymentApi";
 
+const getErrorMessage = (err: unknown, fallback: string) =>
+  err instanceof Error ? err.message : fallback;
+
 // Initialize Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY || "");
 
@@ -208,8 +211,8 @@ function CartContent() {
       if (result.paymentIntent?.status === "succeeded") {
         router.push(`/payment-success?orderId=${orderId}`);
       }
-    } catch (err: any) {
-      setPaymentError(err.message || "Something went wrong processing payment");
+    } catch (err: unknown) {
+      setPaymentError(getErrorMessage(err, "Something went wrong processing payment"));
       setProcessing(false);
     }
   };
@@ -258,7 +261,7 @@ function CartContent() {
         <div className="text-center max-w-md z-10">
            <h2 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">Your cart is empty</h2>
            <p className="text-slate-500 text-lg mb-8 leading-relaxed">
-             Looks like you haven't added anything yet. 
+             Looks like you haven&apos;t added anything yet. 
              <br/><span className="text-orange-600 font-medium">Good food is waiting for you!</span>
            </p>
            
@@ -483,8 +486,7 @@ function CartContent() {
 function useRequireAuth() {
   const auth = useAuth();
   const user = auth.user;
-  // If your AuthContext uses a different property for loading, update here:
-  const loading = "loading" in auth ? (auth as any).loading : false;
+  const loading = auth.isLoading;
   const router = useRouter();
   useEffect(() => {
     if (!loading && !user) router.push("/auth/login");

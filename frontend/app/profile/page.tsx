@@ -35,6 +35,17 @@ interface ProfileData {
   addresses: Address[];
 }
 
+interface SidebarProps {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  onLogout: () => void;
+  mobileOpen: boolean;
+  setMobileOpen: (open: boolean) => void;
+}
+
+const getErrorMessage = (err: unknown, fallback: string) =>
+  err instanceof Error ? err.message : fallback;
+
 // --- SUB-COMPONENTS ---
 
 // 1. Reusable Modal Component
@@ -56,7 +67,7 @@ const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean; onClose:
 };
 
 // 2. Sidebar Component
-const Sidebar = ({ activeTab, setActiveTab, onLogout, mobileOpen, setMobileOpen }: any) => {
+const Sidebar = ({ activeTab, setActiveTab, onLogout, mobileOpen, setMobileOpen }: SidebarProps) => {
   const menuItems = [
     { id: 'profile', icon: User, label: 'My Profile' },
     { id: 'orders', icon: Package, label: 'Orders' },
@@ -191,8 +202,8 @@ export default function ProfilePage() {
       if (!res.ok) throw new Error('Failed to fetch profile');
       const data = await res.json();
       setProfile(data);
-    } catch (err: any) {
-      showStatus('error', err.message);
+    } catch (err: unknown) {
+      showStatus('error', getErrorMessage(err, 'Failed to fetch profile'));
     } finally {
       setIsLoading(false);
     }
@@ -218,8 +229,8 @@ export default function ProfilePage() {
       setProfile(prev => prev ? { ...prev, name: data.user.name, phone: data.user.phone } : null);
       setIsEditProfileOpen(false);
       showStatus('success', 'Profile updated successfully!');
-    } catch (err: any) {
-      showStatus('error', err.message);
+    } catch (err: unknown) {
+      showStatus('error', getErrorMessage(err, 'Update failed'));
     }
   };
 
@@ -240,8 +251,8 @@ export default function ProfilePage() {
       setProfile(prev => prev ? { ...prev, addresses: data.addresses } : null);
       setIsAddressModalOpen(false);
       showStatus('success', isEditingAddress ? 'Address updated!' : 'Address added!');
-    } catch (err: any) {
-      showStatus('error', err.message);
+    } catch (err: unknown) {
+      showStatus('error', getErrorMessage(err, 'Address operation failed'));
     }
   };
 
@@ -256,8 +267,8 @@ export default function ProfilePage() {
       const data = await res.json();
       setProfile(prev => prev ? { ...prev, addresses: data.addresses } : null);
       showStatus('success', 'Address deleted');
-    } catch (err: any) {
-      showStatus('error', err.message);
+    } catch (err: unknown) {
+      showStatus('error', getErrorMessage(err, 'Delete failed'));
     }
   };
 

@@ -29,7 +29,7 @@ export async function reorderItems(
   items: Array<{ menuItemId?: string; name: string; price: number; quantity: number }>
 ) {
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-  const results = [];
+  const results: Array<{ success: boolean; item: string; error?: string }> = [];
 
   for (const item of items) {
     try {
@@ -55,8 +55,9 @@ export async function reorderItems(
       }
 
       results.push({ success: true, item: item.name });
-    } catch (err: any) {
-      results.push({ success: false, item: item.name, error: err.message });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to add item";
+      results.push({ success: false, item: item.name, error: message });
     }
   }
 

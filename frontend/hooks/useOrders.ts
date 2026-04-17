@@ -25,6 +25,9 @@ interface OrdersResponse {
   limit: number;
 }
 
+const getErrorMessage = (err: unknown, fallback: string) =>
+  err instanceof Error ? err.message : fallback;
+
 export function useOrders(userId: string | null, token: string | null, page = 1, limit = 10) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [total, setTotal] = useState(0);
@@ -43,7 +46,7 @@ export function useOrders(userId: string | null, token: string | null, page = 1,
       try {
         setLoading(true);
         setError(null);
-        const data: any = await fetchUserOrders(userId as string, token as string, page, limit);
+        const data: Order[] | OrdersResponse = await fetchUserOrders(userId as string, token as string, page, limit);
         
         if (!cancelled) {
           // Handle both array response (old) and object response (new)
@@ -55,9 +58,9 @@ export function useOrders(userId: string | null, token: string | null, page = 1,
             setTotal(data.total || 0);
           }
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!cancelled) {
-          setError(err.message || "Failed to load orders");
+          setError(getErrorMessage(err, "Failed to load orders"));
         }
       } finally {
         if (!cancelled) {

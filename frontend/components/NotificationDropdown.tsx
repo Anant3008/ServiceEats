@@ -187,7 +187,7 @@ export default function NotificationDropdown() {
                 <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
                   <Bell className="w-8 h-8 text-slate-300" />
                 </div>
-                <p className="font-bold text-slate-900 mb-1">You're all caught up!</p>
+                <p className="font-bold text-slate-900 mb-1">You&apos;re all caught up!</p>
                 <p className="text-sm text-slate-500">No new notifications at the moment.</p>
               </div>
             ) : (

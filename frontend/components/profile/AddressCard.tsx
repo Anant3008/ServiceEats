@@ -8,7 +8,7 @@ interface AddressCardProps {
 }
 
 export default function AddressCard({ address, onEdit, onDelete }: AddressCardProps) {
-  const icons: any = { Home, Work: Briefcase, Other: MapPin };
+  const icons: Record<string, typeof MapPin> = { Home, Work: Briefcase, Other: MapPin };
   const Icon = icons[address.label] || MapPin;
   
   const getTheme = (label: string) => {

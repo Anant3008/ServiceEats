@@ -4,6 +4,9 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
+const getErrorMessage = (err: unknown, fallback: string) =>
+  err instanceof Error ? err.message : fallback;
+
 interface User {
   userId: string;
   email: string;
@@ -76,9 +79,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(userData);
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(userData));
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
-      throw error;
+      throw new Error(getErrorMessage(error, 'Login failed'));
     } finally {
       setIsLoading(false);
     }
@@ -101,9 +104,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Auto-login after successful registration
       await login(email, password);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Registration error:', error);
-      throw error;
+      throw new Error(getErrorMessage(error, 'Registration failed'));
     } finally {
       setIsLoading(false);
     }

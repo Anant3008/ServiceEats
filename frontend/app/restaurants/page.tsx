@@ -244,7 +244,7 @@ export default function RestaurantsPage() {
                 <Search size={32} className="text-slate-300" />
              </div>
              <h3 className="text-xl font-bold text-slate-900 mb-2">No restaurants found</h3>
-             <p className="text-slate-500 max-w-xs mb-6">We couldn't find any matches for "{searchTerm}" with the current filters.</p>
+             <p className="text-slate-500 max-w-xs mb-6">We couldn&apos;t find any matches for &quot;{searchTerm}&quot; with the current filters.</p>
              <button 
                 onClick={() => {setSearchTerm(""); setActiveFilter("All")}}
                 className="px-6 py-2.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition"

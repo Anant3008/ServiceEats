@@ -38,6 +38,14 @@ type Restaurant = {
   menu: MenuItem[];
 };
 
+interface CartApiItem {
+   menuItemId: string;
+   quantity: number;
+}
+
+const getErrorMessage = (err: unknown, fallback: string) =>
+   err instanceof Error ? err.message : fallback;
+
 // --- SUB-COMPONENTS ---
 
 /**
@@ -139,8 +147,8 @@ export default function RestaurantDetailsPage() {
         if (!res.ok) throw new Error("Restaurant not found");
         const data = await res.json();
         setRestaurant(data);
-      } catch (err: any) {
-        setError(err.message);
+         } catch (err: unknown) {
+            setError(getErrorMessage(err, "Restaurant not found"));
       } finally {
         setLoading(false);
       }
@@ -159,7 +167,7 @@ export default function RestaurantDetailsPage() {
           const data = await res.json();
           const map = new Map<string, number>();
           let total = 0;
-          data.items.forEach((i: any) => {
+          data.items.forEach((i: CartApiItem) => {
              map.set(i.menuItemId, i.quantity);
              total += i.quantity;
           });
@@ -312,7 +320,7 @@ export default function RestaurantDetailsPage() {
                    )) : (
                       <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-200">
                          <Utensils className="mx-auto text-slate-300 mb-2" size={32} />
-                         <p className="text-slate-500 font-medium">No items found matching "{searchMenu}"</p>
+                         <p className="text-slate-500 font-medium">No items found matching &quot;{searchMenu}&quot;</p>
                       </div>
                    )}
                 </div>

@@ -161,7 +161,7 @@ function PaymentSuccessContent() {
                 {error}
               </p>
               <p className="text-gray-500 text-sm">
-                Don't worry, your payment was successful. The order will appear shortly.
+                Don&apos;t worry, your payment was successful. The order will appear shortly.
               </p>
             </div>
           )}

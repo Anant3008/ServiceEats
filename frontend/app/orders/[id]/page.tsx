@@ -24,6 +24,9 @@ interface Delivery {
   location: { latitude: number; longitude: number };
 }
 
+const getErrorMessage = (err: unknown, fallback: string) =>
+   err instanceof Error ? err.message : fallback;
+
 export default function OrderTrackingPage() {
   const { user, loading: authLoading } = useRequireAuth();
   const params = useParams();
@@ -122,9 +125,9 @@ export default function OrderTrackingPage() {
             }
 
             return { nextOrder, nextDelivery };
-      } catch (err: any) {
+      } catch (err: unknown) {
             if (!cancelled) {
-               setError(err.message);
+            setError(getErrorMessage(err, "Failed to load order"));
                setLoading(false);
             }
             return { nextOrder: null, nextDelivery: null };

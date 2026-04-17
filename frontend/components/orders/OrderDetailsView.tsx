@@ -4,6 +4,9 @@ import { Order, Delivery } from '@/types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
+const getErrorMessage = (err: unknown, fallback: string) =>
+  err instanceof Error ? err.message : fallback;
+
 interface OrderDetailsProps {
   orderId: string;
   onBack: () => void;
@@ -83,8 +86,8 @@ export default function OrderDetailsView({ orderId, onBack, token }: OrderDetail
       }
       
       setIsSubmitted(true);
-    } catch (err: any) {
-      setRatingError(err.message || "Failed to submit rating. Please try again.");
+    } catch (err: unknown) {
+      setRatingError(getErrorMessage(err, "Failed to submit rating. Please try again."));
       console.error(err);
     } finally {
       setIsSubmitting(false);

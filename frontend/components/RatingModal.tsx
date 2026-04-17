@@ -5,6 +5,9 @@ import { X, Star, Loader2 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
+const getErrorMessage = (err: unknown, fallback: string) =>
+  err instanceof Error ? err.message : fallback;
+
 interface RatingModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -65,8 +68,8 @@ export default function RatingModal({
 
       onSuccess();
       onClose();
-    } catch (err: any) {
-      setError(err.message || "Failed to submit rating");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to submit rating"));
     } finally {
       setLoading(false);
     }

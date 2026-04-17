@@ -32,7 +32,7 @@ export default function OrdersListView({ userId, onSelectOrder, token }: OrdersL
   }, [userId, page, token]);
 
   const getBadge = (status: string) => {
-     const styles: any = { 
+     const styles: Record<string, string> = { 
         completed: "bg-green-50 text-green-700", 
         pending: "bg-blue-50 text-blue-700", 
         cancelled: "bg-red-50 text-red-700" 

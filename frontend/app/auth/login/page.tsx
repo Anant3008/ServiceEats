@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, AlertCircle, Loader2, Star, ArrowRight } from 'lucide-react';
 
+const getErrorMessage = (err: unknown, fallback: string) =>
+  err instanceof Error ? err.message : fallback;
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,8 +28,8 @@ export default function LoginPage() {
     try {
       await login(email, password);
       router.push('/restaurants');
-    } catch (err: any) {
-      setError(err.message || 'Login failed. Please check your credentials.');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Login failed. Please check your credentials.'));
     }
   };
 
@@ -111,7 +114,7 @@ export default function LoginPage() {
           {/* Footer */}
           <div className="text-center pt-4">
             <p className="text-gray-500">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link href="/auth/register" className="text-orange-600 font-bold hover:underline transition">
                 Create an account
               </Link>
@@ -139,7 +142,7 @@ export default function LoginPage() {
                 {[1,2,3,4,5].map(i => <Star key={i} size={16} className="text-yellow-400 fill-yellow-400" />)}
               </div>
               <p className="text-white text-lg font-medium leading-relaxed mb-4">
-                "The fastest delivery I've ever experienced. The food arrived hot and fresh!"
+                &quot;The fastest delivery I&apos;ve ever experienced. The food arrived hot and fresh!&quot;
               </p>
               <div className="flex items-center gap-3">
                  <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold">JD</div>
