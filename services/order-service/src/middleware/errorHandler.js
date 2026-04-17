@@ -5,7 +5,10 @@ const notFound = (req, res, next) => {
 };
 
 const errorHandler = (err, req, res, next) => {
-  const statusCode = err.statusCode || err.status || (res.statusCode !== 200 ? res.statusCode : 500);
+  const statusCode =
+    err.statusCode ||
+    err.status ||
+    (res.statusCode !== 200 ? res.statusCode : 500);
   const payload = {
     message: err.message || "Server error",
   };

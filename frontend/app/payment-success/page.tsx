@@ -3,7 +3,13 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { CheckCircle, Package, Clock, CreditCard, Sparkles } from "lucide-react";
+import {
+  CheckCircle,
+  Package,
+  Clock,
+  CreditCard,
+  Sparkles,
+} from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
@@ -64,7 +70,7 @@ function PaymentSuccessContent() {
 
       // Max attempts reached
       setError(
-        "Order creation is taking longer than expected. Please refresh the page or check your orders."
+        "Order creation is taking longer than expected. Please refresh the page or check your orders.",
       );
       setIsLoading(false);
     };
@@ -82,14 +88,17 @@ function PaymentSuccessContent() {
               {/* Decorative elements */}
               <div className="absolute top-0 right-0 w-32 h-32 bg-green-100 rounded-full -mr-16 -mt-16 opacity-50"></div>
               <div className="absolute bottom-0 left-0 w-40 h-40 bg-orange-100 rounded-full -ml-20 -mb-20 opacity-50"></div>
-              
+
               <div className="relative z-10">
                 {/* Success Icon with animation */}
                 <div className="flex justify-center mb-8">
                   <div className="relative">
                     <div className="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-20"></div>
                     <div className="relative bg-gradient-to-br from-green-400 to-green-600 rounded-full p-6 shadow-lg animate-gentle-float">
-                      <CheckCircle className="w-16 h-16 text-white" strokeWidth={2.5} />
+                      <CheckCircle
+                        className="w-16 h-16 text-white"
+                        strokeWidth={2.5}
+                      />
                     </div>
                   </div>
                 </div>
@@ -98,7 +107,7 @@ function PaymentSuccessContent() {
                 <h1 className="text-4xl md:text-5xl font-bold text-center mb-3 bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
                   Payment Successful!
                 </h1>
-                
+
                 <div className="flex items-center justify-center gap-2 mb-8">
                   <Sparkles className="w-5 h-5 text-yellow-500 animate-pulse" />
                   <p className="text-gray-600 text-center text-lg">
@@ -114,19 +123,30 @@ function PaymentSuccessContent() {
                       <CreditCard className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1">
-                      <p className="font-semibold text-gray-800">Payment Confirmed</p>
-                      <p className="text-sm text-gray-600">Transaction completed successfully</p>
+                      <p className="font-semibold text-gray-800">
+                        Payment Confirmed
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Transaction completed successfully
+                      </p>
                     </div>
                     <CheckCircle className="w-6 h-6 text-green-600" />
                   </div>
 
                   <div className="flex items-center gap-4 p-4 bg-orange-50 rounded-2xl border border-orange-200 animate-pulse">
-                    <div className="bg-orange-500 rounded-full p-2 animate-spin" style={{ animationDuration: '2s' }}>
+                    <div
+                      className="bg-orange-500 rounded-full p-2 animate-spin"
+                      style={{ animationDuration: "2s" }}
+                    >
                       <Package className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1">
-                      <p className="font-semibold text-gray-800">Creating Your Order{dots}</p>
-                      <p className="text-sm text-gray-600">Setting up your order details</p>
+                      <p className="font-semibold text-gray-800">
+                        Creating Your Order{dots}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Setting up your order details
+                      </p>
                     </div>
                     <Clock className="w-6 h-6 text-orange-600 animate-pulse" />
                   </div>
@@ -136,9 +156,18 @@ function PaymentSuccessContent() {
                 <div className="text-center">
                   <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-100 to-green-100 rounded-full">
                     <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-orange-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-2 h-2 bg-orange-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-2 h-2 bg-orange-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      <div
+                        className="w-2 h-2 bg-orange-600 rounded-full animate-bounce"
+                        style={{ animationDelay: "0ms" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-orange-600 rounded-full animate-bounce"
+                        style={{ animationDelay: "150ms" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-orange-600 rounded-full animate-bounce"
+                        style={{ animationDelay: "300ms" }}
+                      ></div>
                     </div>
                     <p className="text-sm font-medium text-gray-700">
                       This usually takes just a few seconds
@@ -157,11 +186,10 @@ function PaymentSuccessContent() {
               <h2 className="text-3xl font-bold text-red-600 mb-4">
                 Taking Longer Than Expected
               </h2>
-              <p className="text-gray-600 text-lg mb-2">
-                {error}
-              </p>
+              <p className="text-gray-600 text-lg mb-2">{error}</p>
               <p className="text-gray-500 text-sm">
-                Don&apos;t worry, your payment was successful. The order will appear shortly.
+                Don&apos;t worry, your payment was successful. The order will
+                appear shortly.
               </p>
             </div>
           )}

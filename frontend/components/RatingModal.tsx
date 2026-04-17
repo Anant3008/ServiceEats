@@ -102,7 +102,9 @@ export default function RatingModal({
 
           {/* Delivery Experience Rating */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">How was your delivery?</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">
+              How was your delivery?
+            </h3>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
@@ -131,7 +133,9 @@ export default function RatingModal({
               className="w-full mt-3 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:bg-gray-100 text-gray-900 placeholder-gray-500"
               rows={3}
             />
-            <p className="text-xs text-gray-500 mt-1">{orderReview.length}/500</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {orderReview.length}/500
+            </p>
           </div>
 
           {/* Restaurant Rating */}
@@ -167,7 +171,9 @@ export default function RatingModal({
               className="w-full mt-3 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:bg-gray-100 text-gray-900 placeholder-gray-500"
               rows={3}
             />
-            <p className="text-xs text-gray-500 mt-1">{restaurantReview.length}/500</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {restaurantReview.length}/500
+            </p>
           </div>
 
           {/* Action Buttons */}

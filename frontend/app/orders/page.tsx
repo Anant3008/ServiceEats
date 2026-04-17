@@ -6,7 +6,15 @@ import { useOrders } from "@/hooks/useOrders";
 import { reorderItems } from "@/lib/orders";
 import Navbar from "@/components/Navbar";
 import { useRouter } from "next/navigation";
-import { Clock, Package, CheckCircle, XCircle, Loader2, ShoppingCart, Eye } from "lucide-react";
+import {
+  Clock,
+  Package,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  ShoppingCart,
+  Eye,
+} from "lucide-react";
 
 const STATUS_COLORS = {
   payment: {
@@ -43,7 +51,7 @@ export default function OrdersPage() {
     user?.userId || null,
     token,
     page,
-    10
+    10,
   );
 
   const handleReorder = async (order: (typeof orders)[number]) => {
@@ -58,12 +66,14 @@ export default function OrdersPage() {
         token,
         order.restaurantId,
         "Restaurant", // We don't have restaurant name in order, ideally should fetch
-        order.items
+        order.items,
       );
 
       const failed = results.filter((r) => !r.success);
       if (failed.length > 0) {
-        alert(`Some items couldn't be added: ${failed.map((f) => f.item).join(", ")}`);
+        alert(
+          `Some items couldn't be added: ${failed.map((f) => f.item).join(", ")}`,
+        );
       } else {
         router.push("/cart");
       }
@@ -91,7 +101,9 @@ export default function OrdersPage() {
         <Navbar />
         <div className="max-w-4xl mx-auto px-6 pt-24 text-center">
           <XCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-red-900 mb-2">Failed to Load Orders</h2>
+          <h2 className="text-2xl font-bold text-red-900 mb-2">
+            Failed to Load Orders
+          </h2>
           <p className="text-red-700 mb-6">{error}</p>
           <button
             onClick={() => window.location.reload()}
@@ -110,7 +122,9 @@ export default function OrdersPage() {
         <Navbar />
         <div className="max-w-4xl mx-auto px-6 pt-24 text-center">
           <Package className="w-20 h-20 text-gray-400 mx-auto mb-6" />
-          <h2 className="text-3xl font-bold text-gray-900 mb-3">No Orders Yet</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-3">
+            No Orders Yet
+          </h2>
           <p className="text-gray-600 mb-8">
             Start exploring restaurants and place your first order!
           </p>
@@ -132,8 +146,12 @@ export default function OrdersPage() {
       <Navbar />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-24 pb-12">
         <div className="mb-8">
-          <h1 className="text-4xl font-black text-gray-900 mb-2">Your Orders</h1>
-          <p className="text-gray-600">Track, view, and reorder your past orders</p>
+          <h1 className="text-4xl font-black text-gray-900 mb-2">
+            Your Orders
+          </h1>
+          <p className="text-gray-600">
+            Track, view, and reorder your past orders
+          </p>
         </div>
 
         <div className="space-y-4">
@@ -159,7 +177,9 @@ export default function OrdersPage() {
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h3 className="text-lg font-bold text-gray-900">Order #{order._id.slice(-8)}</h3>
+                        <h3 className="text-lg font-bold text-gray-900">
+                          Order #{order._id.slice(-8)}
+                        </h3>
                         <p className="text-sm text-gray-500">
                           {formattedDate} at {formattedTime}
                         </p>
@@ -169,7 +189,8 @@ export default function OrdersPage() {
                     {/* Items Summary */}
                     <div className="mb-3">
                       <p className="text-sm text-gray-700 font-semibold mb-1">
-                        {order.items.length} item{order.items.length > 1 ? "s" : ""}
+                        {order.items.length} item
+                        {order.items.length > 1 ? "s" : ""}
                       </p>
                       <div className="text-sm text-gray-600 space-y-1">
                         {order.items.slice(0, 3).map((item, idx) => (
@@ -177,11 +198,15 @@ export default function OrdersPage() {
                             <span>
                               {item.name} x {item.quantity}
                             </span>
-                            <span className="font-semibold">₹{(item.price * item.quantity).toFixed(2)}</span>
+                            <span className="font-semibold">
+                              ₹{(item.price * item.quantity).toFixed(2)}
+                            </span>
                           </div>
                         ))}
                         {order.items.length > 3 && (
-                          <p className="text-gray-500 italic">+{order.items.length - 3} more items</p>
+                          <p className="text-gray-500 italic">
+                            +{order.items.length - 3} more items
+                          </p>
                         )}
                       </div>
                     </div>
@@ -193,9 +218,15 @@ export default function OrdersPage() {
                           STATUS_COLORS.payment[order.paymentStatus]
                         }`}
                       >
-                        {order.paymentStatus === "paid" && <CheckCircle size={12} />}
-                        {order.paymentStatus === "pending" && <Clock size={12} />}
-                        {order.paymentStatus === "failed" && <XCircle size={12} />}
+                        {order.paymentStatus === "paid" && (
+                          <CheckCircle size={12} />
+                        )}
+                        {order.paymentStatus === "pending" && (
+                          <Clock size={12} />
+                        )}
+                        {order.paymentStatus === "failed" && (
+                          <XCircle size={12} />
+                        )}
                         Payment: {order.paymentStatus}
                       </span>
                       <span
@@ -203,9 +234,15 @@ export default function OrdersPage() {
                           STATUS_COLORS.delivery[order.deliveryStatus]
                         }`}
                       >
-                        {order.deliveryStatus === "completed" && <CheckCircle size={12} />}
-                        {order.deliveryStatus === "pending" && <Clock size={12} />}
-                        {order.deliveryStatus === "cancelled" && <XCircle size={12} />}
+                        {order.deliveryStatus === "completed" && (
+                          <CheckCircle size={12} />
+                        )}
+                        {order.deliveryStatus === "pending" && (
+                          <Clock size={12} />
+                        )}
+                        {order.deliveryStatus === "cancelled" && (
+                          <XCircle size={12} />
+                        )}
                         Delivery: {order.deliveryStatus}
                       </span>
                     </div>
@@ -215,7 +252,9 @@ export default function OrdersPage() {
                   <div className="flex flex-col items-end gap-3">
                     <div className="text-right">
                       <p className="text-sm text-gray-500">Total Amount</p>
-                      <p className="text-2xl font-bold text-orange-600">₹{order.totalAmount.toFixed(2)}</p>
+                      <p className="text-2xl font-bold text-orange-600">
+                        ₹{order.totalAmount.toFixed(2)}
+                      </p>
                     </div>
 
                     <div className="flex gap-2">

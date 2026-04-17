@@ -1,27 +1,27 @@
-const User = require('../models/user.model');
+const User = require("../models/user.model");
 
 // Get user profile
 const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select('-password');
-    
+    const user = await User.findById(req.userId).select("-password");
+
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     res.json({
       userId: user._id,
       name: user.name,
       email: user.email,
-      phone: user.phone || '',
+      phone: user.phone || "",
       role: user.role,
       addresses: user.addresses || [],
       createdAt: user.createdAt,
-      updatedAt: user.updatedAt
+      updatedAt: user.updatedAt,
     });
   } catch (error) {
-    console.error('Error fetching profile:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Error fetching profile:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -29,7 +29,7 @@ const getProfile = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const { name, phone } = req.body;
-    
+
     const updateData = {};
     if (name) updateData.name = name;
     if (phone !== undefined) updateData.phone = phone;
@@ -37,27 +37,27 @@ const updateProfile = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       req.userId,
       { $set: updateData },
-      { new: true, runValidators: true }
-    ).select('-password');
+      { new: true, runValidators: true },
+    ).select("-password");
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     res.json({
-      message: 'Profile updated successfully',
+      message: "Profile updated successfully",
       user: {
         userId: user._id,
         name: user.name,
         email: user.email,
-        phone: user.phone || '',
+        phone: user.phone || "",
         role: user.role,
-        addresses: user.addresses || []
-      }
+        addresses: user.addresses || [],
+      },
     });
   } catch (error) {
-    console.error('Error updating profile:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Error updating profile:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -67,20 +67,20 @@ const addAddress = async (req, res) => {
     const { label, street, city, state, pincode, isDefault } = req.body;
 
     if (!label || !street || !city || !state || !pincode) {
-      return res.status(400).json({ 
-        message: 'All address fields are required' 
+      return res.status(400).json({
+        message: "All address fields are required",
       });
     }
 
     const user = await User.findById(req.userId);
-    
+
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     // If this is marked as default, unset all other defaults
     if (isDefault) {
-      user.addresses.forEach(addr => addr.isDefault = false);
+      user.addresses.forEach((addr) => (addr.isDefault = false));
     }
 
     // If this is the first address, make it default
@@ -92,18 +92,18 @@ const addAddress = async (req, res) => {
       city,
       state,
       pincode,
-      isDefault: makeDefault
+      isDefault: makeDefault,
     });
 
     await user.save();
 
     res.status(201).json({
-      message: 'Address added successfully',
-      addresses: user.addresses
+      message: "Address added successfully",
+      addresses: user.addresses,
     });
   } catch (error) {
-    console.error('Error adding address:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Error adding address:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -114,15 +114,15 @@ const updateAddress = async (req, res) => {
     const { label, street, city, state, pincode, isDefault } = req.body;
 
     const user = await User.findById(req.userId);
-    
+
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     const address = user.addresses.id(addressId);
-    
+
     if (!address) {
-      return res.status(404).json({ message: 'Address not found' });
+      return res.status(404).json({ message: "Address not found" });
     }
 
     // Update fields
@@ -134,7 +134,7 @@ const updateAddress = async (req, res) => {
 
     // Handle default flag
     if (isDefault === true) {
-      user.addresses.forEach(addr => addr.isDefault = false);
+      user.addresses.forEach((addr) => (addr.isDefault = false));
       address.isDefault = true;
     } else if (isDefault === false) {
       address.isDefault = false;
@@ -143,12 +143,12 @@ const updateAddress = async (req, res) => {
     await user.save();
 
     res.json({
-      message: 'Address updated successfully',
-      addresses: user.addresses
+      message: "Address updated successfully",
+      addresses: user.addresses,
     });
   } catch (error) {
-    console.error('Error updating address:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Error updating address:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -158,15 +158,15 @@ const deleteAddress = async (req, res) => {
     const { addressId } = req.params;
 
     const user = await User.findById(req.userId);
-    
+
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     const address = user.addresses.id(addressId);
-    
+
     if (!address) {
-      return res.status(404).json({ message: 'Address not found' });
+      return res.status(404).json({ message: "Address not found" });
     }
 
     const wasDefault = address.isDefault;
@@ -180,12 +180,12 @@ const deleteAddress = async (req, res) => {
     await user.save();
 
     res.json({
-      message: 'Address deleted successfully',
-      addresses: user.addresses
+      message: "Address deleted successfully",
+      addresses: user.addresses,
     });
   } catch (error) {
-    console.error('Error deleting address:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Error deleting address:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -194,5 +194,5 @@ module.exports = {
   updateProfile,
   addAddress,
   updateAddress,
-  deleteAddress
+  deleteAddress,
 };

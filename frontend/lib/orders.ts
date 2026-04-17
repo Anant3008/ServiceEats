@@ -1,7 +1,12 @@
 /**
  * Fetch user orders from the API
  */
-export async function fetchUserOrders(userId: string, token: string, page = 1, limit = 10) {
+export async function fetchUserOrders(
+  userId: string,
+  token: string,
+  page = 1,
+  limit = 10,
+) {
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
   const res = await fetch(
     `${API_BASE}/api/orders/user/${userId}?page=${page}&limit=${limit}`,
@@ -9,7 +14,7 @@ export async function fetchUserOrders(userId: string, token: string, page = 1, l
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    }
+    },
   );
 
   if (!res.ok) {
@@ -26,7 +31,12 @@ export async function reorderItems(
   token: string,
   restaurantId: string,
   restaurantName: string,
-  items: Array<{ menuItemId?: string; name: string; price: number; quantity: number }>
+  items: Array<{
+    menuItemId?: string;
+    name: string;
+    price: number;
+    quantity: number;
+  }>,
 ) {
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
   const results: Array<{ success: boolean; item: string; error?: string }> = [];

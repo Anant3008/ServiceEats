@@ -13,14 +13,19 @@ const normalizeCondition = (condition = "") => {
 };
 
 const getTimeOfDay = (timezoneOffsetSeconds) => {
-  const offset = Number.isFinite(timezoneOffsetSeconds) ? timezoneOffsetSeconds : 19800;
+  const offset = Number.isFinite(timezoneOffsetSeconds)
+    ? timezoneOffsetSeconds
+    : 19800;
   const utcTime = new Date();
   const localTime = new Date(utcTime.getTime() + offset * 1000);
   const localHour = localTime.getUTCHours();
 
-  if (localHour >= 5 && localHour < 12) return { timeOfDay: "morning", localHour };
-  if (localHour >= 12 && localHour < 17) return { timeOfDay: "afternoon", localHour };
-  if (localHour >= 17 && localHour < 21) return { timeOfDay: "evening", localHour };
+  if (localHour >= 5 && localHour < 12)
+    return { timeOfDay: "morning", localHour };
+  if (localHour >= 12 && localHour < 17)
+    return { timeOfDay: "afternoon", localHour };
+  if (localHour >= 17 && localHour < 21)
+    return { timeOfDay: "evening", localHour };
   return { timeOfDay: "night", localHour };
 };
 
@@ -28,7 +33,8 @@ export async function POST(req) {
   try {
     const { city, temperature, condition, timezone } = await req.json();
 
-    const fallbackMessage = "Great food awaits 😋 – Check out top-rated restaurants near you!";
+    const fallbackMessage =
+      "Great food awaits 😋 – Check out top-rated restaurants near you!";
 
     if (!process.env.GEMINI_API_KEY) {
       console.warn("Gemini API key not configured, using fallback message");
@@ -38,7 +44,9 @@ export async function POST(req) {
     const { timeOfDay, localHour } = getTimeOfDay(timezone);
     const normalizedCity = (city || "unknown").trim().toLowerCase();
     const weatherKey = normalizeCondition(condition);
-    const tempBucket = Number.isFinite(temperature) ? Math.round(temperature / 5) * 5 : "na";
+    const tempBucket = Number.isFinite(temperature)
+      ? Math.round(temperature / 5) * 5
+      : "na";
 
     const cacheKey = `${normalizedCity}:${timeOfDay}:${weatherKey}:${tempBucket}`;
     const cached = messageCache.get(cacheKey);
@@ -47,10 +55,11 @@ export async function POST(req) {
         { message: cached.message },
         {
           headers: {
-            "Cache-Control": "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600",
+            "Cache-Control":
+              "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600",
             "X-Cache": "HIT",
           },
-        }
+        },
       );
     }
 
@@ -95,22 +104,27 @@ Your output (only the message, no explanations):`;
       { message },
       {
         headers: {
-          "Cache-Control": "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600",
+          "Cache-Control":
+            "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600",
           "X-Cache": "MISS",
         },
-      }
+      },
     );
   } catch (error) {
     console.error("Error generating trending message:", error);
     // Return fallback on error
     return Response.json(
-      { message: "Great food awaits 😋 – Check out top-rated restaurants near you!" },
+      {
+        message:
+          "Great food awaits 😋 – Check out top-rated restaurants near you!",
+      },
       {
         headers: {
-          "Cache-Control": "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600",
+          "Cache-Control":
+            "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600",
           "X-Cache": "ERROR",
         },
-      }
+      },
     );
   }
 }

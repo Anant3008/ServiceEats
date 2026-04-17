@@ -1,13 +1,13 @@
-const mongoose = require('mongoose');
-const express = require('express');
-require('dotenv').config();
+const mongoose = require("mongoose");
+const express = require("express");
+require("dotenv").config();
 
 const app = express();
 
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI, {
-        family: 4,
+      family: 4,
     });
     console.log("MongoDB connected");
   } catch (error) {

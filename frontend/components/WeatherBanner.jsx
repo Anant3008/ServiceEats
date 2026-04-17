@@ -1,4 +1,4 @@
-import { MapPin, CloudSun } from "lucide-react"; 
+import { MapPin, CloudSun } from "lucide-react";
 
 export default function WeatherBanner({ city, temp, condition }) {
   return (

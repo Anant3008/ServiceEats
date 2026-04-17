@@ -1,34 +1,34 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { authenticateToken } = require('../middleware/auth.middleware');
+const { authenticateToken } = require("../middleware/auth.middleware");
 const {
-    getCart,
-    addToCart,
-    updateCartItem,
-    removeFromCart,
-    clearCart,
-    checkout
-} = require('../controllers/cart.controller');
+  getCart,
+  addToCart,
+  updateCartItem,
+  removeFromCart,
+  clearCart,
+  checkout,
+} = require("../controllers/cart.controller");
 
 // All cart routes require authentication
 router.use(authenticateToken);
 
 // Get user's active cart
-router.get('/', getCart);
+router.get("/", getCart);
 
 // Add item to cart
-router.post('/add', addToCart);
+router.post("/add", addToCart);
 
 // Update item quantity
-router.put('/update', updateCartItem);
+router.put("/update", updateCartItem);
 
 // Remove item from cart
-router.post('/remove', removeFromCart);
+router.post("/remove", removeFromCart);
 
 // Clear entire cart
-router.delete('/clear', clearCart);
+router.delete("/clear", clearCart);
 
 // Checkout - convert cart to order
-router.post('/checkout', checkout);
+router.post("/checkout", checkout);
 
 module.exports = router;

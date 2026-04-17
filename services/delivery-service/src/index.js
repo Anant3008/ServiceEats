@@ -1,30 +1,31 @@
-const express=require('express');
-require('dotenv').config();
-const connectDB=require('./config/db');
-const {startConsumer}=require('./kafka/consumer');
-const { notFound, errorHandler } = require('./middleware/errorHandler');
+const express = require("express");
+require("dotenv").config();
+const connectDB = require("./config/db");
+const { startConsumer } = require("./kafka/consumer");
+const { notFound, errorHandler } = require("./middleware/errorHandler");
 
-const app=express();
+const app = express();
 
 app.use(express.json());
 
-app.use('/api/deliveries', require('./routes/deliveryRoutes'));
+app.use("/api/deliveries", require("./routes/deliveryRoutes"));
 
 app.use(notFound);
 app.use(errorHandler);
 
-
 const startServer = async () => {
   try {
     await connectDB();
-    
+
     app.listen(process.env.PORT || 4005, () => {
-      console.log(`Delivery Service running on port ${process.env.PORT || 4005}`);
+      console.log(
+        `Delivery Service running on port ${process.env.PORT || 4005}`,
+      );
     });
 
     startConsumer();
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error("Failed to start server:", error);
     process.exit(1);
   }
 };

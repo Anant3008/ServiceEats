@@ -29,10 +29,9 @@ interface WeatherResponse {
 }
 
 async function getWeather(city: string): Promise<WeatherResponse> {
-  const res = await fetch(
-    `${SITE_URL}/api/weather?city=${city}`,
-    { cache: "no-store" }
-  );
+  const res = await fetch(`${SITE_URL}/api/weather?city=${city}`, {
+    cache: "no-store",
+  });
   return res.json();
 }
 
@@ -51,14 +50,19 @@ async function getTrendingMessageFromAI(
   city: string,
   temperature: number,
   condition: string,
-  timezone: number
+  timezone: number,
 ): Promise<string> {
   try {
     const res = await fetch(`${SITE_URL}/api/trending-message`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ city, temperature, condition, timezone } as TrendingMessageRequest),
-      cache: 'no-store'
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        city,
+        temperature,
+        condition,
+        timezone,
+      } as TrendingMessageRequest),
+      cache: "no-store",
     });
     const data: TrendingMessageResponse = await res.json();
     return data.message;
@@ -89,18 +93,25 @@ export default async function HomePage() {
   const temp = weather?.main?.temp || 25;
   const condition = weather?.weather?.[0]?.main || "Clear";
   const timezone = weather?.timezone || 19800; // IST offset in seconds
-  const message = await getTrendingMessageFromAI(city, temp, condition, timezone);
+  const message = await getTrendingMessageFromAI(
+    city,
+    temp,
+    condition,
+    timezone,
+  );
 
   // 2. Render New Design
   return (
     <div className="min-h-screen bg-orange-50 font-sans flex flex-col">
-      
       {/* --- Navigation Bar --- */}
       <nav className="flex justify-between items-center px-8 py-6 w-full">
         <div className="text-2xl font-extrabold text-orange-600 tracking-tighter">
           Service Eats.
         </div>
-        <a href="/auth/login" className="flex items-center gap-2 px-5 py-2 text-orange-600 font-bold border-2 border-orange-200 rounded-full hover:bg-orange-100 transition-all bg-white">
+        <a
+          href="/auth/login"
+          className="flex items-center gap-2 px-5 py-2 text-orange-600 font-bold border-2 border-orange-200 rounded-full hover:bg-orange-100 transition-all bg-white"
+        >
           <User size={18} />
           <span>Login / Sign Up</span>
         </a>
@@ -108,10 +119,8 @@ export default async function HomePage() {
 
       {/* --- Main Content --- */}
       <main className="flex-grow flex flex-col-reverse lg:flex-row items-center justify-between px-8 lg:px-16 w-full gap-12 lg:gap-20">
-        
         {/* Left Column: Text & CTA */}
         <div className="lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left pt-10 lg:pt-0 pb-12">
-          
           {/* Refactored Weather Banner */}
           <WeatherBanner city={city} temp={temp} condition={condition} />
 
@@ -119,8 +128,8 @@ export default async function HomePage() {
           <TrendingMessage message={message} />
 
           <p className="text-gray-600 text-lg max-w-md mb-8 leading-relaxed">
-            Order from the best local restaurants with real-time tracking. 
-            Fresh food, right to your doorstep in {city}.
+            Order from the best local restaurants with real-time tracking. Fresh
+            food, right to your doorstep in {city}.
           </p>
 
           {/* Refactored CTA Button */}
@@ -128,15 +137,14 @@ export default async function HomePage() {
 
           {/* Social Proof / Trust Metrics */}
           <div className="mt-8 flex items-center gap-4 text-sm text-gray-500 font-medium">
-             <span>⭐ 4.8 Rating</span>
-             <span>•</span>
-             <span>⚡ 25 min Avg. Time</span>
+            <span>⭐ 4.8 Rating</span>
+            <span>•</span>
+            <span>⚡ 25 min Avg. Time</span>
           </div>
         </div>
 
         {/* Right Column: The Floating Food Image */}
         <div className="lg:w-1/2 flex justify-center lg:justify-end items-center relative min-h-[500px] lg:min-h-[600px] ">
-          
           {/* Background Glow Blob */}
           <div className="absolute right-0 bg-orange-300 rounded-full w-96 h-96 lg:w-[600px] lg:h-[600px] filter blur-3xl opacity-30 animate-pulse"></div>
           {/* Food Image */}
@@ -150,7 +158,6 @@ export default async function HomePage() {
             unoptimized
           />
         </div>
-
       </main>
     </div>
   );

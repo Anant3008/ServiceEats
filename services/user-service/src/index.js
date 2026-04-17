@@ -1,14 +1,14 @@
-const express=require('express');
-require('dotenv').config();
-const connectDB=require('./config/db');
-const { notFound, errorHandler } = require('./middleware/errorHandler');
+const express = require("express");
+require("dotenv").config();
+const connectDB = require("./config/db");
+const { notFound, errorHandler } = require("./middleware/errorHandler");
 
-const app=express();
+const app = express();
 
 app.use(express.json());
 
-app.use('/api/auth',require('./routes/authRoutes'));
-app.use('/api/profile',require('./routes/profileRoutes'));
+app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/profile", require("./routes/profileRoutes"));
 
 app.use(notFound);
 app.use(errorHandler);
@@ -16,12 +16,12 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     await connectDB();
-    
+
     app.listen(process.env.PORT || 5001, () => {
       console.log(`Auth Service running on port ${process.env.PORT || 5001}`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error("Failed to start server:", error);
     process.exit(1);
   }
 };

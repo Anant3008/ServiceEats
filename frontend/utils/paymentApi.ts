@@ -28,7 +28,9 @@ export async function createPayment({
 
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
-    throw new Error(errData.error || errData.message || "Failed to initiate payment");
+    throw new Error(
+      errData.error || errData.message || "Failed to initiate payment",
+    );
   }
 
   return res.json();

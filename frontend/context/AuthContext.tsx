@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from "react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
@@ -36,15 +36,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Load token from localStorage on mount
   useEffect(() => {
     try {
-      const storedToken = localStorage.getItem('token');
-      const storedUser = localStorage.getItem('user');
-      
+      const storedToken = localStorage.getItem("token");
+      const storedUser = localStorage.getItem("user");
+
       if (storedToken && storedUser) {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
       }
     } catch (error) {
-      console.error('Failed to load auth from localStorage:', error);
+      console.error("Failed to load auth from localStorage:", error);
     } finally {
       setIsHydrating(false);
     }
@@ -54,34 +54,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const response = await fetch(`${API_BASE}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
+        throw new Error(data.message || "Login failed");
       }
 
       // Decode JWT to get user info
-      const payload = JSON.parse(atob(data.token.split('.')[1]));
+      const payload = JSON.parse(atob(data.token.split(".")[1]));
       const userData: User = {
         userId: payload.userId,
         email: payload.email,
         name: payload.name,
-        role: payload.role
+        role: payload.role,
       };
 
       // Save to state and localStorage
       setToken(data.token);
       setUser(userData);
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(userData));
     } catch (error: unknown) {
-      console.error('Login error:', error);
-      throw new Error(getErrorMessage(error, 'Login failed'));
+      console.error("Login error:", error);
+      throw new Error(getErrorMessage(error, "Login failed"));
     } finally {
       setIsLoading(false);
     }
@@ -91,22 +91,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const response = await fetch(`${API_BASE}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
+        throw new Error(data.message || "Registration failed");
       }
 
       // Auto-login after successful registration
       await login(email, password);
     } catch (error: unknown) {
-      console.error('Registration error:', error);
-      throw new Error(getErrorMessage(error, 'Registration failed'));
+      console.error("Registration error:", error);
+      throw new Error(getErrorMessage(error, "Registration failed"));
     } finally {
       setIsLoading(false);
     }
@@ -115,8 +115,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
   };
 
   const refreshUser = async () => {
@@ -125,8 +125,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await fetch(`${API_BASE}/api/profile`, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (response.ok) {
@@ -135,18 +135,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           userId: profileData.userId,
           email: profileData.email,
           name: profileData.name,
-          role: profileData.role
+          role: profileData.role,
         };
         setUser(updatedUser);
-        localStorage.setItem('user', JSON.stringify(updatedUser));
+        localStorage.setItem("user", JSON.stringify(updatedUser));
       }
     } catch (error) {
-      console.error('Error refreshing user:', error);
+      console.error("Error refreshing user:", error);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, isLoading, isHydrating, refreshUser }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        login,
+        register,
+        logout,
+        isLoading,
+        isHydrating,
+        refreshUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -155,7 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }
