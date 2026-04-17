@@ -21,7 +21,7 @@ ServiceEats is a **microservices-based food delivery platform** designed to mirr
 - **Next.js Frontend** for customer-facing UI (port 3001)
 - **Docker Compose** orchestration for local development
 - **MongoDB** per service for data isolation
-- **Apache Kafka** for event-driven communication
+- **Apache Kafka** (KRaft mode) for event-driven communication
 
 ---
 
@@ -57,7 +57,7 @@ ServiceEats is a **microservices-based food delivery platform** designed to mirr
        └──────────────────────────────────────────┐
                                                   │
 ┌─────────────────────────────────────────────────▼──────────┐
-│         Apache Kafka (Broker + Zookeeper)                   │
+│         Apache Kafka (3-Broker KRaft Cluster)                │
 │  Events: order_created, payment.pending, delivery.assigned │
 │         delivery.completed, user_created                    │
 └────────────────┬──────────────────────┬─────────────────────┘
@@ -101,7 +101,7 @@ ServiceEats is a **microservices-based food delivery platform** designed to mirr
 ### Infrastructure
 - **Containerization**: Docker & Docker Compose
 - **Message Broker**: Apache Kafka 7.5.0
-- **Coordination**: Zookeeper (Kafka dependency)
+- **Coordination**: KRaft (built-in, no external dependency)
 - **Database**: MongoDB (per service)
 - **API Communication**: REST + HTTP Proxy Middleware
 
@@ -362,7 +362,7 @@ Initiates payment  Prepares email/SMS
 ### Local Development
 ```bash
 docker-compose up -d
-# All services, Kafka, Zookeeper, databases start automatically
+# All services, Kafka, and databases start automatically
 ```
 
 ### Production (Not Covered in Current Docs)

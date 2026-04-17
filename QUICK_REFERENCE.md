@@ -5,7 +5,7 @@
 ### Start Everything
 ```bash
 docker-compose up -d
-# All services, Kafka, Zookeeper, and databases start automatically
+# All services, Kafka, and databases start automatically
 ```
 
 ### Access Points

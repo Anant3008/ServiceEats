@@ -30,6 +30,10 @@ docs/
   - Communication patterns (REST & Kafka)
   - Data flow through the system
   - Service interaction matrix
+- [Engineering Decisions and Tradeoffs](ENGINEERING_DECISIONS.md)
+  - Why major technical choices were made
+  - Alternatives considered and tradeoffs
+  - Future revisit criteria
 
 ### 🖥️ Frontend
 **Learn about the customer-facing UI**

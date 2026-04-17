@@ -19,7 +19,7 @@
 ✅ Node.js 18+ (LTS recommended)
 ✅ npm or yarn
 ✅ MongoDB (local or Atlas cloud)
-✅ Docker & Docker Compose (for Kafka/Zookeeper)
+✅ Docker & Docker Compose (for Kafka KRaft cluster)
 ✅ Git
 ✅ Stripe account (for payment integration)
 ✅ Google API key (optional, for AI trending messages)
@@ -107,6 +107,7 @@ Docker Setup:
 ✅ No local installation needed
 ✅ Easy to scale and replicate
 ✅ Production-like environment locally
+✅ Kafka runs in KRaft mode (no ZooKeeper needed)
 ```
 
 ### Docker Compose Overview
@@ -117,8 +118,9 @@ version: '3.9'
 
 services:
   # Infrastructure
-  zookeeper:         # Kafka dependency
-  kafka:             # Message broker
+  kafka-1:           # Kafka broker (KRaft node 1)
+  kafka-2:           # Kafka broker (KRaft node 2)
+  kafka-3:           # Kafka broker (KRaft node 3)
   
   # Backend Services
   gateway-service:   # API Gateway
@@ -276,7 +278,7 @@ docker-compose up -d
 ```
 1. Builds images for all services (if not built)
 2. Creates containers
-3. Starts Zookeeper → Kafka (dependency chain)
+3. Starts Kafka KRaft cluster (kafka-1, kafka-2, kafka-3)
 4. Starts all microservices (after Kafka healthy)
 5. All services connect to their MongoDB instances
 ```
@@ -287,8 +289,9 @@ docker-compose ps
 
 # Expected output:
 NAME                 STATUS
-zookeeper            Up
-kafka                Up (healthy)
+kafka-1              Up (healthy)
+kafka-2              Up (healthy)
+kafka-3              Up (healthy)
 gateway-service      Up
 user-service         Up
 restaurant-service   Up
@@ -323,9 +326,9 @@ docker-compose down -v           # Also remove volumes (databases)
 
 ### Option 2: Local Development
 
-#### Terminal 1: Start Kafka & Zookeeper
+#### Terminal 1: Start Kafka KRaft Cluster
 ```bash
-docker-compose up zookeeper kafka
+docker-compose up kafka-1 kafka-2 kafka-3
 ```
 
 #### Terminal 2: User Service

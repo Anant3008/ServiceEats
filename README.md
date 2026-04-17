@@ -6,13 +6,18 @@ ServiceEats is a microservices-based food delivery application that mirrors a pr
 
 The platform covers user authentication, restaurant management, cart and order flows, payments, delivery orchestration, and notifications. The frontend is built with Next.js and talks to backend services via the gateway.
 
+## Engineering Decisions
+
+For internship and architecture review, see:
+- [Engineering Decisions and Tradeoffs](docs/ENGINEERING_DECISIONS.md)
+
 ## System Architecture
 
 - Frontend (`/frontend`): Next.js, React, TypeScript UI for customers and restaurant owners.
 - API Gateway (`/services/gateway`): Node.js/Express entry point that routes and secures requests.
 - Microservices (`/services/*`): Independent Node.js/Express services backed by MongoDB.
-- Messaging: Apache Kafka (with Zookeeper) for event-driven workflows.
-- Infrastructure: Docker Compose to provision Kafka, Zookeeper, and all services; MongoDB connection strings provided via environment variables.
+- Messaging: Apache Kafka (KRaft mode) for event-driven workflows.
+- Infrastructure: Docker Compose to provision Kafka and all services; MongoDB connection strings provided via environment variables.
 
 ### Services and Ports
 
@@ -70,7 +75,7 @@ Create `.env` files for the frontend and each service. Common variables:
 
 ### Run with Docker Compose
 
-Start the full stack (Kafka, Zookeeper, gateway, and all services):
+Start the full stack (Kafka, gateway, and all services):
 
 ```bash
 docker-compose up -d
