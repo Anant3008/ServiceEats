@@ -1,0 +1,48 @@
+name: Services Prettier
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "services/**"
+      - ".github/workflows/services-prettier.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "services/**"
+      - ".github/workflows/services-prettier.yml"
+  workflow_dispatch:
+
+jobs:
+  prettier-services:
+    name: Prettier Check (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - user-service
+          - restaurant-service
+          - order-service
+          - payment-service
+          - delivery-service
+          - notification-service
+          - gateway
+    defaults:
+      run:
+        working-directory: services/${{ matrix.service }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: services/${{ matrix.service }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prettier check
+        run: npx prettier --check .
