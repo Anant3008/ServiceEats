@@ -17,13 +17,13 @@ const startServer = async () => {
   try {
     await connectDB();
 
-    app.listen(process.env.PORT || 4005, () => {
+    app.listen(process.env.PORT || 4004, () => {
       console.log(
-        `Delivery Service running on port ${process.env.PORT || 4005}`,
+        `Delivery Service running on port ${process.env.PORT || 4004}`,
       );
     });
 
-    startConsumer();
+    await startConsumer();
   } catch (error) {
     console.error("Failed to start server:", error);
     process.exit(1);

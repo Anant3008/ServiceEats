@@ -12,31 +12,40 @@ const kafka = new Kafka({
 const consumer = kafka.consumer({ groupId: "payment-group" });
 
 const startConsumer = async () => {
-  await consumer.connect();
-  await consumer.subscribe({ topic: "order_created", fromBeginning: true });
+  try {
+    await consumer.connect();
+    await consumer.subscribe({ topic: "order_created", fromBeginning: true });
 
-  await consumer.run({
-    eachMessage: async ({ topic, message }) => {
-      const data = JSON.parse(message.value.toString());
-      console.log("Received order_created event:", data);
+    await consumer.run({
+      eachMessage: async ({ topic, message }) => {
+        try {
+          const data = JSON.parse(message.value.toString());
+          console.log("Received order_created event:", data);
 
-      const payment = await Payment.create({
-        orderId: data.orderId,
-        userId: data.userId,
-        amount: data.totalAmount,
-        status: "success",
-      });
+          const payment = await Payment.create({
+            orderId: data.orderId,
+            userId: data.userId,
+            amount: data.totalAmount,
+            status: "success",
+          });
 
-      console.log("Payment successful for order:", data.orderId);
+          console.log("Payment successful for order:", data.orderId);
 
-      await produceEvent("payment_success", {
-        orderId: payment.orderId,
-        userId: payment.userId,
-        amount: payment.amount,
-        status: payment.status,
-      });
-    },
-  });
+          await produceEvent("payment_success", {
+            orderId: payment.orderId,
+            userId: payment.userId,
+            amount: payment.amount,
+            status: payment.status,
+          });
+        } catch (error) {
+          console.error(`Error processing ${topic} event:`, error);
+        }
+      },
+    });
+  } catch (error) {
+    console.error("Failed to start payment consumer:", error);
+    throw error;
+  }
 };
 
 module.exports = { startConsumer };
